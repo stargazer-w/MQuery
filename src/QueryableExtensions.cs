@@ -6,7 +6,7 @@ namespace MQuery
     {
         public static IQueryable<T> Where<T>(this IQueryable<T> @this, Query<T> query)
         {
-            return query.WhereFrom(@this);
+            return query.Filter(@this);
         }
 
         public static IQueryable<T> Order<T>(this IQueryable<T> @this, Query<T> query)
@@ -14,24 +14,24 @@ namespace MQuery
             return query.Order(@this);
         }
 
-        public static IQueryable<T> GetPage<T>(this IQueryable<T> @this, Query<T> query)
+        public static IQueryable<T> Slice<T>(this IQueryable<T> @this, Query<T> query)
         {
-            return query.GetPageFrom(@this);
+            return query.Slice(@this);
         }
 
-        public static IQueryable<T> GetPage<T>(this IQueryable<T> @this, Query<T> query, out int total)
+        public static IQueryable<T> Slice<T>(this IQueryable<T> @this, Query<T> query, out int total)
         {
-            return query.GetPageFrom(@this, out total);
+            return query.Slice(@this, out total);
         }
 
         public static IQueryable<T> Query<T>(this IQueryable<T> @this, Query<T> query)
         {
-            return query.QueryFrom(@this);
+            return query.Execute(@this);
         }
 
         public static IQueryable<T> Query<T>(this IQueryable<T> @this, Query<T> query, out int total)
         {
-            return query.QueryFrom(@this, out total);
+            return query.Execute(@this, out total);
         }
     }
 }
