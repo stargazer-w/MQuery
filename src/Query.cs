@@ -12,7 +12,7 @@ namespace MQuery
         {
         }
 
-        public IQueryable<T> WhereFrom(IQueryable<T> queryable) => 
+        public IQueryable<T> Filter(IQueryable<T> queryable) => 
             WhereExpression is Expression<Func<T, bool>> w ? queryable.Where(w) : queryable;
 
         public IQueryable<T> Order(IQueryable<T> queryable)
@@ -32,7 +32,7 @@ namespace MQuery
                     _ => throw new Exception(),
                 };
 
-                var methodInfo = typeof(Queryable).GetMethods().First(m => m.Name == methodName); // BUG: First不够稳定
+                var methodInfo = typeof(Queryable).GetMethods().First(m => m.Name == methodName && m.GetParameters().Length == 2); // BUG: First不够稳定
                 methodInfo = methodInfo.MakeGenericMethod(typeof(T), selector.ReturnType);
                 queryable = (methodInfo.Invoke(null, new object?[] {queryable, selector}) as IQueryable<T>)!;
 
@@ -42,28 +42,29 @@ namespace MQuery
             return queryable;
         }
 
-        public IQueryable<T> GetPageFrom(IQueryable<T> queryable)
+        public IQueryable<T> Slice(IQueryable<T> queryable)
         {
             return queryable.Skip(Paging.Skip).Take(Paging.Limit);
         }
 
-        public IQueryable<T> GetPageFrom(IQueryable<T> queryable, out int total)
+        public IQueryable<T> Slice(IQueryable<T> queryable, out int total)
         {
             total = queryable.Count();
-            return GetPageFrom(queryable);
+            return Slice(queryable);
         }
 
-        public IQueryable<T> QueryFrom(IQueryable<T> queryable)
+        public IQueryable<T> Execute(IQueryable<T> queryable)
         {
-            queryable = WhereFrom(queryable);
+            queryable = Filter(queryable);
             queryable = Order(queryable);
-            return GetPageFrom(queryable);
+            return Slice(queryable);
         }
-        public IQueryable<T> QueryFrom(IQueryable<T> queryable, out int total)
+
+        public IQueryable<T> Execute(IQueryable<T> queryable, out int total)
         {
-            queryable = WhereFrom(queryable);
+            queryable = Filter(queryable);
             queryable = Order(queryable);
-            return GetPageFrom(queryable, out total);
+            return Slice(queryable, out total);
         }
     }
 

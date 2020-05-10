@@ -23,9 +23,7 @@ namespace MQuery
         {
             _bindingContext = bindingContext;
             var type = bindingContext.ModelType;
-            _queryModel = (type.GetConstructor(Array.Empty<Type>())!
-                               .Invoke(Array.Empty<object>())
-                           as Query)!;
+            _queryModel = (Query)Activator.CreateInstance(type)!;
 
             var targetProperties = type.GetGenericArguments()[0].GetProperties();
 
@@ -177,7 +175,7 @@ namespace MQuery
                 // 驼峰化
                 name = char.ToLower(name[0]) + name[1..];
                 // 每种比较操作添加不同的操作符后缀
-                var key = $"{name}[{@operator}]";
+                var key = @operator == QueryOperators.Eq ? name : $"{name}[{@operator}]";
 
                 // 从query中获取查询，若没有值则表示忽略
                 if(!query.TryGetValue(key, out var stringValues))
