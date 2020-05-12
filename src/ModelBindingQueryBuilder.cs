@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
+using Microsoft.Extensions.Primitives;
 
 namespace MQuery
 {
@@ -58,7 +59,7 @@ namespace MQuery
             {
                 try
                 {
-                    _queryModel.Paging.Skip = int.Parse(skipString.First());
+                    _queryModel.Slicing.Skip = int.Parse(skipString.First());
                 }
                 catch(Exception e)
                 {
@@ -70,7 +71,7 @@ namespace MQuery
             {
                 try
                 {
-                    _queryModel.Paging.Limit = int.Parse(limitString.First());
+                    _queryModel.Slicing.Limit = int.Parse(limitString.First());
                 }
                 catch(Exception e)
                 {
@@ -88,9 +89,9 @@ namespace MQuery
         {
             var regex = new Regex(@"\$sort\[(.+)\]");
             var query = _bindingContext.HttpContext.Request.Query;
-            foreach (var (key, value) in query)
+            foreach(var (key, value) in query)
             {
-                if(!(regex.Match(key) is { Success: true, Groups: {Count : 2} } match))
+                if(!(regex.Match(key) is { Success: true, Groups: { Count: 2 } } match))
                     continue;
 
 
@@ -128,57 +129,62 @@ namespace MQuery
             var converter = TypeDescriptor.GetConverter(propertyInfo.PropertyType);
             var propertySelector = Expression.Property(_queryModel.ParameterExpression, propertyInfo);
             // 相等绑定，与其他操作互斥，优先级最高
-            if(TryGetOperatorExpression(QueryOperators.Eq, out var eqOper))
+            if(TryGetOperatorExpression(CompareOperator.Eq, out var eqOper))
             {
                 if(eqOper != null) yield return eqOper;
                 yield break;
             }
 
             // 枚举绑定，与其他操作互斥，优先级其次
-            if(TryGetOperatorExpression(QueryOperators.In, out var inOper))
+            if(TryGetOperatorExpression(CompareOperator.In, out var inOper))
             {
                 if(inOper != null) yield return inOper;
                 yield break;
             }
 
             // 大于绑定，与大于等于互斥，优先级更高
-            if(TryGetOperatorExpression(QueryOperators.GT, out var gtOper))
+            if(TryGetOperatorExpression(CompareOperator.GT, out var gtOper))
             {
                 if(gtOper != null) yield return gtOper;
             }
             // 大于等于绑定，与大于互斥
-            else if(TryGetOperatorExpression(QueryOperators.GTE, out var gteOper))
+            else if(TryGetOperatorExpression(CompareOperator.GTE, out var gteOper))
             {
                 if(gteOper != null) yield return gteOper;
             }
 
             // 小于绑定，与小于等于互斥，优先级更高
-            if(TryGetOperatorExpression(QueryOperators.LT, out var ltOper))
+            if(TryGetOperatorExpression(CompareOperator.LT, out var ltOper))
             {
                 if(ltOper != null) yield return ltOper;
             }
             // 小于等于绑定，与小于互斥
-            else if(TryGetOperatorExpression(QueryOperators.GTE, out var lteOper))
+            else if(TryGetOperatorExpression(CompareOperator.GTE, out var lteOper))
             {
                 if(lteOper != null) yield return lteOper;
             }
 
             // 不等于绑定
-            if(TryGetOperatorExpression(QueryOperators.NE, out var neOper))
+            if(TryGetOperatorExpression(CompareOperator.NE, out var neOper))
             {
                 if(neOper != null) yield return neOper;
             }
 
-            bool TryGetOperatorExpression(string @operator, out Expression? valueExpression)
+            bool TryGetOperatorExpression(CompareOperator @operator, out Expression? valueExpression)
             {
                 var query = _bindingContext.HttpContext.Request.Query;
                 // 驼峰化
                 name = char.ToLower(name[0]) + name[1..];
-                // 每种比较操作添加不同的操作符后缀
-                var key = @operator == QueryOperators.Eq ? name : $"{name}[{@operator}]";
 
                 // 从query中获取查询，若没有值则表示忽略
-                if(!query.TryGetValue(key, out var stringValues))
+                var result = @operator.CombineKeys(name)
+                                      .Select(key =>
+                                      {
+                                          var use = query.TryGetValue(key, out var stringValues);
+                                          return (use, key, stringValues);
+                                      })
+                                      .FirstOrDefault(it => it.use);
+                if(result == default)
                 {
                     valueExpression = null;
                     return false;
@@ -186,29 +192,12 @@ namespace MQuery
 
                 try
                 {
-                    var value = @operator switch
-                    {
-                        // in多值绑定
-                        QueryOperators.In => stringValues.Select(s => converter.ConvertFromString(s)),
-                        _ => converter.ConvertFromString(stringValues.First())
-                    };
-                    var constant = Expression.Constant(value);
-                    valueExpression = @operator switch
-                    {
-                        QueryOperators.Eq => Expression.Equal(propertySelector, constant),
-                        QueryOperators.In => throw new NotImplementedException("暂不支持in操作"),
-                        QueryOperators.GT => Expression.GreaterThan(propertySelector, constant),
-                        QueryOperators.GTE => Expression.GreaterThanOrEqual(propertySelector, constant),
-                        QueryOperators.LT => Expression.LessThan(propertySelector, constant),
-                        QueryOperators.LTE => Expression.LessThanOrEqual(propertySelector, constant),
-                        QueryOperators.NE => Expression.NotEqual(propertySelector, constant),
-                        _ => throw new AggregateException(nameof(@operator) + " out of range")
-                    };
+                    valueExpression = @operator.CombineExpression(result.stringValues, propertySelector, converter);
                     return true;
                 }
                 catch(Exception e)
                 {
-                    _bindingContext.ModelState.AddModelError(key, e.Message);
+                    _bindingContext.ModelState.AddModelError(result.key, e.Message);
                     valueExpression = null;
                     return true;
                 }
