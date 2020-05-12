@@ -1,6 +1,6 @@
 ﻿namespace MQuery
 {
-    public class QueryPaging
+    public class QuerySlicing
     {
         public int Skip {get; set;} = 0;
 

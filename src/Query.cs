@@ -44,7 +44,7 @@ namespace MQuery
 
         public IQueryable<T> Slice(IQueryable<T> queryable)
         {
-            return queryable.Skip(Paging.Skip).Take(Paging.Limit);
+            return queryable.Skip(Slicing.Skip).Take(Slicing.Limit);
         }
 
         public IQueryable<T> Slice(IQueryable<T> queryable, out int total)
@@ -53,14 +53,14 @@ namespace MQuery
             return Slice(queryable);
         }
 
-        public IQueryable<T> Execute(IQueryable<T> queryable)
+        public IQueryable<T> QueryFrom(IQueryable<T> queryable)
         {
             queryable = Filter(queryable);
             queryable = Order(queryable);
             return Slice(queryable);
         }
 
-        public IQueryable<T> Execute(IQueryable<T> queryable, out int total)
+        public IQueryable<T> QueryFrom(IQueryable<T> queryable, out int total)
         {
             queryable = Filter(queryable);
             queryable = Order(queryable);
@@ -81,6 +81,6 @@ namespace MQuery
 
         public (QueryOrderType type, LambdaExpression selector)[]? OrderExpressions {get; set;}
 
-        public QueryPaging Paging {get; set;} = new QueryPaging();
+        public QuerySlicing Slicing {get; set;} = new QuerySlicing();
     }
 }
