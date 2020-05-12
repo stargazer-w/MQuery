@@ -159,7 +159,7 @@ namespace MQuery
                 if(ltOper != null) yield return ltOper;
             }
             // 小于等于绑定，与小于互斥
-            else if(TryGetOperatorExpression(CompareOperator.GTE, out var lteOper))
+            else if(TryGetOperatorExpression(CompareOperator.LTE, out var lteOper))
             {
                 if(lteOper != null) yield return lteOper;
             }
