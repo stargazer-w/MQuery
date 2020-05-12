@@ -23,7 +23,7 @@ namespace MQuery
             }
             catch
             {
-                throw new NotSupportedException($"Can not convert {str?? "{null}"} to {type}.");
+                throw new NotSupportedException($"Can not convert {str?? "{null}"} to type {type.Name}.");
             }
         }
 
