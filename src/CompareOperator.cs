@@ -14,6 +14,19 @@ namespace MQuery
             Identifiers = identifiers;
         }
 
+        private static object ConvertSingleValue(string valueString, TypeConverter typeConverter, Type type)
+        {
+            string? str = valueString.Length == 0 ? null : valueString;
+            try
+            {
+                return typeConverter.ConvertFrom(str);
+            }
+            catch
+            {
+                throw new NotSupportedException($"Can not convert {str?? "{null}"} to {type}.");
+            }
+        }
+
         public static CompareOperator Eq { get; set; } = new EqaulsOperatior();
         public static CompareOperator In { get; set; } = new InOperatior();
         public static CompareOperator GT { get; set; } = new GreaterThenOperatior();
@@ -43,8 +56,8 @@ namespace MQuery
 
             public override Expression CombineExpression(IEnumerable<string> stringValues, Expression selector, TypeConverter typeConverter)
             {
-                var value = typeConverter.ConvertFromString(stringValues.First());
-                var constant = Expression.Constant(value);
+                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var constant = Expression.Constant(value, selector.Type);
                 return Expression.Equal(selector, constant);
             }
         }
@@ -63,7 +76,7 @@ namespace MQuery
 
             public override Expression CombineExpression(IEnumerable<string> stringValues, Expression selector, TypeConverter typeConverter)
             {
-                object value = stringValues.Select(typeConverter.ConvertFromString);
+                object value = stringValues.Select(it => ConvertSingleValue(it,typeConverter,selector.Type));
                 value = CastMethod.MakeGenericMethod(selector.Type).Invoke(null, new object?[] { value })!;
                 var constant = Expression.Constant(value, typeof(IEnumerable<>).MakeGenericType(selector.Type));
                 var contains = _containsMethod.MakeGenericMethod(selector.Type);
@@ -80,8 +93,8 @@ namespace MQuery
 
             public override Expression CombineExpression(IEnumerable<string> stringValues, Expression selector, TypeConverter typeConverter)
             {
-                var value = typeConverter.ConvertFromString(stringValues.First());
-                var constant = Expression.Constant(value);
+                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var constant = Expression.Constant(value, selector.Type);
                 return Expression.GreaterThan(selector, constant);
             }
         }
@@ -94,8 +107,8 @@ namespace MQuery
 
             public override Expression CombineExpression(IEnumerable<string> stringValues, Expression selector, TypeConverter typeConverter)
             {
-                var value = typeConverter.ConvertFromString(stringValues.First());
-                var constant = Expression.Constant(value);
+                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var constant = Expression.Constant(value, selector.Type);
                 return Expression.GreaterThanOrEqual(selector, constant);
             }
         }
@@ -108,8 +121,8 @@ namespace MQuery
 
             public override Expression CombineExpression(IEnumerable<string> stringValues, Expression selector, TypeConverter typeConverter)
             {
-                var value = typeConverter.ConvertFromString(stringValues.First());
-                var constant = Expression.Constant(value);
+                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var constant = Expression.Constant(value, selector.Type);
                 return Expression.LessThan(selector, constant);
             }
         }
@@ -122,22 +135,22 @@ namespace MQuery
 
             public override Expression CombineExpression(IEnumerable<string> stringValues, Expression selector, TypeConverter typeConverter)
             {
-                var value = typeConverter.ConvertFromString(stringValues.First());
-                var constant = Expression.Constant(value);
+                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var constant = Expression.Constant(value, selector.Type);
                 return Expression.LessThanOrEqual(selector, constant);
             }
         }
 
         private class NotEqualOperatior : CompareOperator
         {
-            public NotEqualOperatior() : base(new string[] { "$nt" })
+            public NotEqualOperatior() : base(new string[] { "$ne" })
             {
             }
 
             public override Expression CombineExpression(IEnumerable<string> stringValues, Expression selector, TypeConverter typeConverter)
             {
-                var value = typeConverter.ConvertFromString(stringValues.First());
-                var constant = Expression.Constant(value);
+                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var constant = Expression.Constant(value, selector.Type);
                 return Expression.NotEqual(selector, constant);
             }
         }
