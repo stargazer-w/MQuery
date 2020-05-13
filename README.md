@@ -9,7 +9,7 @@
 
 ##### 数据源和Action配置
 
-```
+```CSharp
 List<Blog> Blogs = new List<Blog>
 {
     new Blog {Id = 1, Title = "IOC-DI", CreateTime = new DateTime(2020, 3, 26), Likes = null},
@@ -32,7 +32,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 ##### 等于查询
 
 
-```
+```JSON
 // https://localhost:44396/api/blogs?title=Web%20Api
 
 [
@@ -48,7 +48,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 ##### 大于查询
 
 
-```
+```JSON
 // https://localhost:44396/api/blogs?likes[$gt]=500
 
 [
@@ -77,7 +77,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 
 枚举是多值的，所以要额外带一对中括号
 
-```
+```JSON
 // https://localhost:44396/api/blogs?title[$in][]=MVC&title[$in][]=Blazor
 
 [
@@ -102,7 +102,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 ##### AND查询
 查询4月的博客
 
-```
+```JSON
 // https://localhost:44396/api/blogs?createTime[$gte]=2020-4-1&createTime[$lt]=2020-5-1
 
 [
@@ -125,7 +125,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 
 key=value中value为空即表示为null，没有对空字符串的查询，空字符串被认为是没有额外意义的，与null相同。
 
-```
+```JSON
 // https://localhost:44396/api/blogs?title=
 
 [
@@ -140,7 +140,7 @@ key=value中value为空即表示为null，没有对空字符串的查询，空�
 
 不可为空的值会验证失败
 
-```
+```JSON
 // https://localhost:44396/api/blogs?id=
 
 {
@@ -160,7 +160,7 @@ key=value中value为空即表示为null，没有对空字符串的查询，空�
 
 只提供部分可查询字段，自动忽略不可查询字段
 
-```
+```CSharp
 [HttpGet("api/blogs")]
 public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> query)
 {
@@ -170,7 +170,7 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
 ```
 查询Id
 
-```
+```JSON
 // https://localhost:44396/api/blogs?id=1
 
 [
@@ -186,7 +186,7 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
 
 
 
-```
+```JSON
 // https://localhost:44396/api/blogs?likes=1024
 
 [
