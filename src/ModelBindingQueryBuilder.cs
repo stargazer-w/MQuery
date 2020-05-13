@@ -126,7 +126,6 @@ namespace MQuery
         private IEnumerable<Expression> BindCompareOperationsOnProperty(PropertyInfo propertyInfo)
         {
             var name = propertyInfo.Name;
-            var converter = TypeDescriptor.GetConverter(propertyInfo.PropertyType);
             var propertySelector = Expression.Property(_queryModel.ParameterExpression, propertyInfo);
             // 相等绑定，与其他操作互斥，优先级最高
             if(TryGetOperatorExpression(CompareOperator.Eq, out var eqOper))
@@ -192,7 +191,7 @@ namespace MQuery
 
                 try
                 {
-                    valueExpression = @operator.CombineExpression(result.stringValues, propertySelector, converter);
+                    valueExpression = @operator.CombineExpression(result.stringValues, propertySelector);
                     return true;
                 }
                 catch(Exception e)
