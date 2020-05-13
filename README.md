@@ -237,7 +237,7 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
 
 `https://localhost:44396/api/blogs?$sort[likes]=-1`
 
-根据likes倒序
+根据likes倒序，1为正序，其他值非法。
 
 ```JSON
 [
@@ -289,6 +289,7 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
 #### 切片(分页)
 
 `https://localhost:44396/api/blogs?$skip=3&$limit=2`
+跳过3项，取2项
 
 ```JSON
 [
