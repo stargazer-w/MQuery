@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -14,13 +15,18 @@ namespace MQuery
             Identifiers = identifiers;
         }
 
-        private static object? ConvertSingleValue(string valueString, TypeConverter typeConverter, Type type)
+        private static ConcurrentDictionary<Type, TypeConverter> _typeConvertCache = new ConcurrentDictionary<Type, TypeConverter>();
+
+        private static object? ConvertValue(string valueString, Type type)
         {
             string? str = valueString.Length == 0 ? null : valueString;
             if(type == typeof(string)) return str;
+
+            var converter = _typeConvertCache.GetOrAdd(type, TypeDescriptor.GetConverter);
+
             try
             {
-                return typeConverter.ConvertFrom(str);
+                return converter.ConvertFromString(str);
             }
             catch
             {
@@ -44,16 +50,12 @@ namespace MQuery
 
         public string[] Identifiers {get;}
 
-        public IEnumerable<string> CombineKeys(string name)
+        public virtual IEnumerable<string> CombineKeys(string name)
         {
             return Identifiers.Select(i => i.Length > 0 ? $"{name}[{i}]" : name);
         }
 
-        public abstract Expression CombineExpression(
-            IEnumerable<string> stringValues,
-            MemberExpression selector,
-            TypeConverter typeConverter
-        );
+        public abstract Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector);
 
         private class EqualsOperator : CompareOperator
         {
@@ -61,9 +63,9 @@ namespace MQuery
             {
             }
 
-            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector, TypeConverter typeConverter)
+            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector)
             {
-                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var value = ConvertValue(stringValues.First(), selector.Type);
                 var constant = Expression.Constant(value, selector.Type);
                 return Expression.Equal(selector, constant);
             }
@@ -81,9 +83,14 @@ namespace MQuery
             {
             }
 
-            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector, TypeConverter typeConverter)
+            public override IEnumerable<string> CombineKeys(string name)
             {
-                object value = stringValues.Select(it => ConvertSingleValue(it, typeConverter, selector.Type));
+                return base.CombineKeys(name).Select(it => it + "[]");
+            }
+
+            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector)
+            {
+                object value = stringValues.Select(it => ConvertValue(it, selector.Type));
                 value = CastMethod.MakeGenericMethod(selector.Type).Invoke(null, new[] {value})!;
                 var constant = Expression.Constant(value, typeof(IEnumerable<>).MakeGenericType(selector.Type));
                 var contains = _containsMethod.MakeGenericMethod(selector.Type);
@@ -98,9 +105,9 @@ namespace MQuery
             {
             }
 
-            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector, TypeConverter typeConverter)
+            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector)
             {
-                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var value = ConvertValue(stringValues.First(), selector.Type);
                 var constant = Expression.Constant(value, selector.Type);
                 return Expression.GreaterThan(selector, constant);
             }
@@ -112,9 +119,9 @@ namespace MQuery
             {
             }
 
-            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector, TypeConverter typeConverter)
+            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector)
             {
-                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var value = ConvertValue(stringValues.First(), selector.Type);
                 var constant = Expression.Constant(value, selector.Type);
                 return Expression.GreaterThanOrEqual(selector, constant);
             }
@@ -126,9 +133,9 @@ namespace MQuery
             {
             }
 
-            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector, TypeConverter typeConverter)
+            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector)
             {
-                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var value = ConvertValue(stringValues.First(), selector.Type);
                 var constant = Expression.Constant(value, selector.Type);
                 return Expression.LessThan(selector, constant);
             }
@@ -140,9 +147,9 @@ namespace MQuery
             {
             }
 
-            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector, TypeConverter typeConverter)
+            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector)
             {
-                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var value = ConvertValue(stringValues.First(), selector.Type);
                 var constant = Expression.Constant(value, selector.Type);
                 return Expression.LessThanOrEqual(selector, constant);
             }
@@ -154,9 +161,9 @@ namespace MQuery
             {
             }
 
-            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector, TypeConverter typeConverter)
+            public override Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector)
             {
-                var value = ConvertSingleValue(stringValues.First(), typeConverter, selector.Type);
+                var value = ConvertValue(stringValues.First(), selector.Type);
                 var constant = Expression.Constant(value, selector.Type);
                 return Expression.NotEqual(selector, constant);
             }
