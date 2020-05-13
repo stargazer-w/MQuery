@@ -115,7 +115,7 @@ namespace MQuery
         private void BindWhereExpression()
         {
             var opers = _targetPropertyInfos
-                        .SelectMany(BindWhereOperationsOnProperty)
+                        .SelectMany(BindCompareOperationsOnProperty)
                         .ToArray();
 
             if(opers.Any())
@@ -123,7 +123,7 @@ namespace MQuery
                     Expression.Lambda(opers.Aggregate(Expression.And), _queryModel.ParameterExpression);
         }
 
-        private IEnumerable<Expression> BindWhereOperationsOnProperty(PropertyInfo propertyInfo)
+        private IEnumerable<Expression> BindCompareOperationsOnProperty(PropertyInfo propertyInfo)
         {
             var name = propertyInfo.Name;
             var converter = TypeDescriptor.GetConverter(propertyInfo.PropertyType);
