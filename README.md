@@ -31,10 +31,9 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 
 ##### 等于查询
 
+`https://localhost:44396/api/blogs?title=Web%20Api`
 
 ```JSON
-// https://localhost:44396/api/blogs?title=Web%20Api
-
 [
   {
     "id": 4,
@@ -47,10 +46,9 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 
 ##### 大于查询
 
+`https://localhost:44396/api/blogs?likes[$gt]=500`
 
 ```JSON
-// https://localhost:44396/api/blogs?likes[$gt]=500
-
 [
   {
     "id": 2,
@@ -77,9 +75,9 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 
 枚举是多值的，所以要额外带一对中括号
 
-```JSON
-// https://localhost:44396/api/blogs?title[$in][]=MVC&title[$in][]=Blazor
+`https://localhost:44396/api/blogs?title[$in][]=MVC&title[$in][]=Blazor`
 
+```JSON
 [
   {
     "id": 2,
@@ -102,9 +100,9 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 ##### AND查询
 查询4月的博客
 
-```JSON
-// https://localhost:44396/api/blogs?createTime[$gte]=2020-4-1&createTime[$lt]=2020-5-1
+`https://localhost:44396/api/blogs?createTime[$gte]=2020-4-1&createTime[$lt]=2020-5-1`
 
+```JSON
 [
   {
     "id": 2,
@@ -123,11 +121,11 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 
 ##### 空值查询
 
+`https://localhost:44396/api/blogs?title=`
+
 key=value中value为空即表示为null，没有对空字符串的查询，空字符串被认为是没有额外意义的，与null相同。
 
 ```JSON
-// https://localhost:44396/api/blogs?title=
-
 [
   {
     "id": 7,
@@ -140,9 +138,9 @@ key=value中value为空即表示为null，没有对空字符串的查询，空�
 
 不可为空的值会验证失败
 
-```JSON
-// https://localhost:44396/api/blogs?id=
+`https://localhost:44396/api/blogs?id=`
 
+```JSON
 {
   "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
   "title": "One or more validation errors occurred.",
@@ -170,9 +168,9 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
 ```
 查询Id
 
-```JSON
-// https://localhost:44396/api/blogs?id=1
+`https://localhost:44396/api/blogs?id=1`
 
+```JSON
 [
   {
     "id": 1,
@@ -184,11 +182,9 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
 ```
 查询Likes
 
-
+`https://localhost:44396/api/blogs?likes=1024`
 
 ```JSON
-// https://localhost:44396/api/blogs?likes=1024
-
 [
   {
     "id": 1,
