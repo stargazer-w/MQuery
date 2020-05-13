@@ -1,11 +1,13 @@
 # MQuery
 
-#### 介绍
+### 介绍
 基于类似MongoDB查询语法的Http QueryString查询模式。依赖于Asp.Net Core MVC ModelBinding。
 
 只做了第一层的字段查询，写的比较简陋算是抛砖引玉，希望有大佬看上这个思路，可以改出更好用的版本。
 
-#### 使用说明
+### 使用说明
+
+#### 筛选
 
 ##### 数据源和Action配置
 
@@ -29,7 +31,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 }
 ```
 
-##### 等于查询
+##### 等于筛选
 
 `https://localhost:44396/api/blogs?title=Web%20Api`
 
@@ -44,7 +46,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 ]
 ```
 
-##### 大于查询
+##### 大于筛选
 
 `https://localhost:44396/api/blogs?likes[$gt]=500`
 
@@ -71,7 +73,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 ]
 ```
 
-##### 枚举查询
+##### 枚举筛选
 
 枚举是多值的，所以要额外带一对中括号
 
@@ -97,8 +99,8 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 除此上面这些之外还包括大于等于`$gte`、小于`$lt`、小于等于`$lte`、不等于`$ne`
 
 
-##### AND查询
-查询4月的博客
+##### AND筛选
+筛选4月的博客
 
 `https://localhost:44396/api/blogs?createTime[$gte]=2020-4-1&createTime[$lt]=2020-5-1`
 
@@ -119,11 +121,11 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 ]
 ```
 
-##### 空值查询
+##### 空值筛选
 
 `https://localhost:44396/api/blogs?title=`
 
-key=value中value为空即表示为null，没有对空字符串的查询，空字符串被认为是没有额外意义的，与null相同。
+key=value中value为空即表示为null，没有对空字符串的筛选，空字符串被认为是没有额外意义的，与null相同。
 
 ```JSON
 [
@@ -166,7 +168,7 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
     return Ok(result);
 }
 ```
-查询Id
+筛选Id
 
 `https://localhost:44396/api/blogs?id=1`
 
@@ -180,7 +182,7 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
   }
 ]
 ```
-查询Likes
+筛选Likes
 
 `https://localhost:44396/api/blogs?likes=1024`
 
@@ -231,5 +233,77 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
 ]
 ```
 
+#### 排序
 
+`https://localhost:44396/api/blogs?$sort[likes]=-1`
+
+根据likes倒序
+
+```JSON
+[
+  {
+    "id": 4,
+    "title": "Web Api",
+    "createTime": "2020-03-02T00:00:00",
+    "likes": 8888
+  },
+  {
+    "id": 3,
+    "title": "Blazor",
+    "createTime": "2020-05-08T00:00:00",
+    "likes": 6412
+  },
+  {
+    "id": 2,
+    "title": "MVC",
+    "createTime": "2020-04-01T00:00:00",
+    "likes": 1024
+  },
+  {
+    "id": 5,
+    "title": "SignalR",
+    "createTime": "2020-04-12T00:00:00",
+    "likes": 102
+  },
+  {
+    "id": 6,
+    "title": "gRPC",
+    "createTime": "2020-06-30T00:00:00",
+    "likes": 102
+  },
+  {
+    "id": 7,
+    "title": null,
+    "createTime": "2020-03-26T00:00:00",
+    "likes": 3
+  },
+  {
+    "id": 1,
+    "title": "IOC-DI",
+    "createTime": "2020-03-26T00:00:00",
+    "likes": null
+  }
+]
+```
+
+#### 切片(分页)
+
+`https://localhost:44396/api/blogs?$skip=3&$limit=2`
+
+```JSON
+[
+  {
+    "id": 4,
+    "title": "Web Api",
+    "createTime": "2020-03-02T00:00:00",
+    "likes": 8888
+  },
+  {
+    "id": 5,
+    "title": "SignalR",
+    "createTime": "2020-04-12T00:00:00",
+    "likes": 102
+  }
+]
+```
 
