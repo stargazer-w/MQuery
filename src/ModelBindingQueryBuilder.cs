@@ -128,48 +128,48 @@ namespace MQuery
             var name = propertyInfo.Name;
             var propertySelector = Expression.Property(_queryModel.ParameterExpression, propertyInfo);
             // 相等绑定，与其他操作互斥，优先级最高
-            if(TryGetOperatorExpression(CompareOperator.Eq, out var eqOper))
+            if(TryGetOperatorExpression(ComparisonOperator.Eq, out var eqOper))
             {
                 if(eqOper != null) yield return eqOper;
                 yield break;
             }
 
             // 枚举绑定，与其他操作互斥，优先级其次
-            if(TryGetOperatorExpression(CompareOperator.In, out var inOper))
+            if(TryGetOperatorExpression(ComparisonOperator.In, out var inOper))
             {
                 if(inOper != null) yield return inOper;
                 yield break;
             }
 
             // 大于绑定，与大于等于互斥，优先级更高
-            if(TryGetOperatorExpression(CompareOperator.GT, out var gtOper))
+            if(TryGetOperatorExpression(ComparisonOperator.GT, out var gtOper))
             {
                 if(gtOper != null) yield return gtOper;
             }
             // 大于等于绑定，与大于互斥
-            else if(TryGetOperatorExpression(CompareOperator.GTE, out var gteOper))
+            else if(TryGetOperatorExpression(ComparisonOperator.GTE, out var gteOper))
             {
                 if(gteOper != null) yield return gteOper;
             }
 
             // 小于绑定，与小于等于互斥，优先级更高
-            if(TryGetOperatorExpression(CompareOperator.LT, out var ltOper))
+            if(TryGetOperatorExpression(ComparisonOperator.LT, out var ltOper))
             {
                 if(ltOper != null) yield return ltOper;
             }
             // 小于等于绑定，与小于互斥
-            else if(TryGetOperatorExpression(CompareOperator.LTE, out var lteOper))
+            else if(TryGetOperatorExpression(ComparisonOperator.LTE, out var lteOper))
             {
                 if(lteOper != null) yield return lteOper;
             }
 
             // 不等于绑定
-            if(TryGetOperatorExpression(CompareOperator.NE, out var neOper))
+            if(TryGetOperatorExpression(ComparisonOperator.NE, out var neOper))
             {
                 if(neOper != null) yield return neOper;
             }
 
-            bool TryGetOperatorExpression(CompareOperator @operator, out Expression? valueExpression)
+            bool TryGetOperatorExpression(ComparisonOperator @operator, out Expression? valueExpression)
             {
                 var query = _bindingContext.HttpContext.Request.Query;
                 // 驼峰化
