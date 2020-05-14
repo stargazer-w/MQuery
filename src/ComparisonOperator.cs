@@ -8,9 +8,9 @@ using System.Reflection;
 
 namespace MQuery
 {
-    public abstract class CompareOperator
+    public abstract class ComparisonOperator
     {
-        public CompareOperator(string[] identifiers)
+        protected ComparisonOperator(string[] identifiers)
         {
             Identifiers = identifiers;
         }
@@ -34,19 +34,19 @@ namespace MQuery
             }
         }
 
-        public static CompareOperator Eq {get;} = new EqualsOperator();
+        public static ComparisonOperator Eq {get;} = new EqualsOperator();
 
-        public static CompareOperator In {get;} = new InOperator();
+        public static ComparisonOperator In {get;} = new InOperator();
 
-        public static CompareOperator GT {get;} = new GreaterThenOperator();
+        public static ComparisonOperator GT {get;} = new GreaterThenOperator();
 
-        public static CompareOperator GTE {get;} = new GreaterThanOrEqualOperator();
+        public static ComparisonOperator GTE {get;} = new GreaterThanOrEqualOperator();
 
-        public static CompareOperator LT {get;} = new LessThanOperator();
+        public static ComparisonOperator LT {get;} = new LessThanOperator();
 
-        public static CompareOperator LTE {get;} = new LessThanOrEqualOperator();
+        public static ComparisonOperator LTE {get;} = new LessThanOrEqualOperator();
 
-        public static CompareOperator NE {get;} = new NotEqualOperator();
+        public static ComparisonOperator NE {get;} = new NotEqualOperator();
 
         public string[] Identifiers {get;}
 
@@ -57,7 +57,7 @@ namespace MQuery
 
         public abstract Expression CombineExpression(IEnumerable<string> stringValues, MemberExpression selector);
 
-        private class EqualsOperator : CompareOperator
+        private class EqualsOperator : ComparisonOperator
         {
             public EqualsOperator() : base(new[] {"", "$eq"})
             {
@@ -70,8 +70,8 @@ namespace MQuery
                 return Expression.Equal(selector, constant);
             }
         }
-
-        private class InOperator : CompareOperator
+  
+        private class InOperator : ComparisonOperator
         {
             private static MethodInfo _containsMethod
                 = typeof(Enumerable).GetMethods().First(m => m.Name == "Contains" && m.GetParameters().Length == 2);
@@ -99,7 +99,7 @@ namespace MQuery
             }
         }
 
-        private class GreaterThenOperator : CompareOperator
+        private class GreaterThenOperator : ComparisonOperator
         {
             public GreaterThenOperator() : base(new[] {"$gt"})
             {
@@ -113,7 +113,7 @@ namespace MQuery
             }
         }
 
-        private class GreaterThanOrEqualOperator : CompareOperator
+        private class GreaterThanOrEqualOperator : ComparisonOperator
         {
             public GreaterThanOrEqualOperator() : base(new[] {"$gte"})
             {
@@ -127,7 +127,7 @@ namespace MQuery
             }
         }
 
-        private class LessThanOperator : CompareOperator
+        private class LessThanOperator : ComparisonOperator
         {
             public LessThanOperator() : base(new[] {"$lt"})
             {
@@ -141,7 +141,7 @@ namespace MQuery
             }
         }
 
-        private class LessThanOrEqualOperator : CompareOperator
+        private class LessThanOrEqualOperator : ComparisonOperator
         {
             public LessThanOrEqualOperator() : base(new[] {"$lte"})
             {
@@ -155,7 +155,7 @@ namespace MQuery
             }
         }
 
-        private class NotEqualOperator : CompareOperator
+        private class NotEqualOperator : ComparisonOperator
         {
             public NotEqualOperator() : base(new[] {"$ne"})
             {
