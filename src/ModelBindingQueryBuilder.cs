@@ -125,8 +125,11 @@ namespace MQuery
 
         private IEnumerable<Expression> BindCompareOperationsOnProperty(PropertyInfo propertyInfo)
         {
-            var name = propertyInfo.Name;
+            // 驼峰化
+            var name = char.ToLower(propertyInfo.Name[0]) + propertyInfo.Name[1..];
+
             var propertySelector = Expression.Property(_queryModel.ParameterExpression, propertyInfo);
+
             // 相等绑定，与其他操作互斥，优先级最高
             if(TryGetOperatorExpression(ComparisonOperator.Eq, out var eqOper))
             {
@@ -172,8 +175,6 @@ namespace MQuery
             bool TryGetOperatorExpression(ComparisonOperator @operator, out Expression? valueExpression)
             {
                 var query = _bindingContext.HttpContext.Request.Query;
-                // 驼峰化
-                name = char.ToLower(name[0]) + name[1..];
 
                 // 从query中获取查询，若没有值则表示忽略
                 var result = @operator.CombineKeys(name)
