@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Mvc;
@@ -12,8 +13,10 @@ namespace MQuery
         {
         }
 
-        public IQueryable<T> Filter(IQueryable<T> queryable) => 
-            WhereExpression is Expression<Func<T, bool>> w ? queryable.Where(w) : queryable;
+        public new Expression<Func<T, bool>> WhereExpression =>
+            base.WhereExpression is Expression<Func<T, bool>> exp ? exp : it => true;
+
+        public IQueryable<T> Filter(IQueryable<T> queryable) => queryable.Where(WhereExpression);
 
         public IQueryable<T> Order(IQueryable<T> queryable)
         {
@@ -34,7 +37,7 @@ namespace MQuery
 
                 var methodInfo = typeof(Queryable).GetMethods().First(m => m.Name == methodName && m.GetParameters().Length == 2); // BUG: First不够稳定
                 methodInfo = methodInfo.MakeGenericMethod(typeof(T), selector.ReturnType);
-                queryable = (methodInfo.Invoke(null, new object?[] {queryable, selector}) as IQueryable<T>)!;
+                queryable = (methodInfo.Invoke(null, new object?[] { queryable, selector }) as IQueryable<T>)!;
 
                 isFirst = false;
             }
@@ -75,12 +78,12 @@ namespace MQuery
             ParameterExpression = parameterExpression;
         }
 
-        public ParameterExpression ParameterExpression {get;}
+        internal ParameterExpression ParameterExpression { get; }
 
-        public LambdaExpression? WhereExpression {get; set;}
+        internal LambdaExpression? WhereExpression { get; set; }
 
-        public (QueryOrderType type, LambdaExpression selector)[]? OrderExpressions {get; set;}
+        internal (QueryOrderType type, LambdaExpression selector)[]? OrderExpressions { get; set; }
 
-        public QuerySlicing Slicing {get; set;} = new QuerySlicing();
+        public QuerySlicing Slicing { get; set; } = new QuerySlicing();
     }
 }
