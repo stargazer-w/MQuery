@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using AutoMapper;
+using AutoMapper.Extensions.ExpressionMapping;
 using Microsoft.AspNetCore.Mvc;
 using MQuery;
 
@@ -9,7 +12,7 @@ using MQuery;
 public class BlogController : ControllerBase
 {
     [HttpGet]
-    public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
+    public ActionResult<IEnumerable<Blog>> Query(Query<BlogDTO> query)
     {
         var blogs = new List<Blog>
         {
@@ -21,9 +24,23 @@ public class BlogController : ControllerBase
             new Blog{Id = 6,Title = null, CreateTime = new DateTime(2020,3,26),Likes = 3},
         };
 
-        var result = blogs.AsQueryable().Query(query);
+        var mapperConfig = new MapperConfiguration(config =>
+        {
+            config.AddExpressionMapping();
+            config.CreateMap<Blog, BlogDTO>();
+        });
+        var mapper = mapperConfig.CreateMapper();
+        var dtoQuery = query.BuildOrderPlan(query.BuildWherePlan());
+        var exp = mapper.MapExpression<Expression<Func<IQueryable<BlogDTO>, IQueryable<BlogDTO>>>, Expression<Func<IQueryable<Blog>, IQueryable<Blog>>>>(dtoQuery);
+        var result = exp.Compile()(blogs.AsQueryable());
+
         return Ok(result);
     }
+}
+
+public class BlogDTO
+{
+    public int Id { get; set; }
 }
 
 public class Blog
