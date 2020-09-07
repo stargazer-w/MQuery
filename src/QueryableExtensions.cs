@@ -4,34 +4,34 @@ namespace MQuery
 {
     public static class QueryableExtensions
     {
-        public static IQueryable<T> Where<T>(this IQueryable<T> @this, Query<T> query)
+        public static IQueryable<T> Where<T>(this IQueryable<T> @this, QueryExpression<T> queryExpression)
         {
-            return query.Filter(@this);
+            return queryExpression.ExecuteWhere(@this);
         }
 
-        public static IQueryable<T> Order<T>(this IQueryable<T> @this, Query<T> query)
+        public static IQueryable<T> Order<T>(this IQueryable<T> @this, QueryExpression<T> queryExpression)
         {
-            return query.Order(@this);
+            return queryExpression.ExecuteOrder(@this);
         }
 
-        public static IQueryable<T> Slice<T>(this IQueryable<T> @this, Query<T> query)
+        public static IQueryable<T> Slice<T>(this IQueryable<T> @this, QueryExpression<T> queryExpression)
         {
-            return query.Slice(@this);
+            return queryExpression.ExecuteSlice(@this);
         }
 
-        public static IQueryable<T> Slice<T>(this IQueryable<T> @this, Query<T> query, out int total)
+        public static IQueryable<T> Slice<T>(this IQueryable<T> @this, QueryExpression<T> queryExpression, out int total)
         {
-            return query.Slice(@this, out total);
+            return queryExpression.ExecuteSlice(@this, out total);
         }
 
-        public static IQueryable<T> Query<T>(this IQueryable<T> @this, Query<T> query)
+        public static IQueryable<T> Query<T>(this IQueryable<T> @this, QueryExpression<T> queryExpression)
         {
-            return query.QueryFrom(@this);
+            return queryExpression.ExecuteQuery(@this);
         }
 
-        public static IQueryable<T> Query<T>(this IQueryable<T> @this, Query<T> query, out int total)
+        public static IQueryable<T> Query<T>(this IQueryable<T> @this, QueryExpression<T> queryExpression, out int total)
         {
-            return query.QueryFrom(@this, out total);
+            return queryExpression.ExecuteQuery(@this, out total);
         }
     }
 }
