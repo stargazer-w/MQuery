@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MQuery
 {
     [ModelBinder(BinderType = typeof(QueryBinder))]
-    public class Query<T> : Query
+    public class QueryExpression<T> : Query
     {
         #region 懒初始化字段
         private static readonly Lazy<MethodInfo> _whereInfo
@@ -32,14 +32,14 @@ namespace MQuery
             => _orderByDescInfos.GetOrAdd(tKey, t => OrderByDescInfo.MakeGenericMethod(typeof(T), tKey));
         public static Expression<Func<IQueryable<T>, IQueryable<T>>> EmptyExpression => _emptyExpression.Value;
 
-        public Query() : base(Expression.Parameter(typeof(T)))
+        public QueryExpression() : base(Expression.Parameter(typeof(T)))
         {
         }
 
-        public IQueryable<T> Filter(IQueryable<T> queryable) =>
+        public IQueryable<T> ExecuteWhere(IQueryable<T> queryable) =>
             WhereExpression is Expression<Func<T, bool>> w ? queryable.Where(w) : queryable;
 
-        public IQueryable<T> Order(IQueryable<T> queryable)
+        public IQueryable<T> ExecuteOrder(IQueryable<T> queryable)
         {
             if (OrderExpressions == null)
                 return queryable;
@@ -69,29 +69,29 @@ namespace MQuery
             return queryable;
         }
 
-        public IQueryable<T> Slice(IQueryable<T> queryable)
+        public IQueryable<T> ExecuteSlice(IQueryable<T> queryable)
         {
             return queryable.Skip(Slicing.Skip).Take(Slicing.Limit);
         }
 
-        public IQueryable<T> Slice(IQueryable<T> queryable, out int total)
+        public IQueryable<T> ExecuteSlice(IQueryable<T> queryable, out int total)
         {
             total = queryable.Count();
-            return Slice(queryable);
+            return ExecuteSlice(queryable);
         }
 
-        public IQueryable<T> QueryFrom(IQueryable<T> queryable)
+        public IQueryable<T> ExecuteQuery(IQueryable<T> queryable)
         {
-            queryable = Filter(queryable);
-            queryable = Order(queryable);
-            return Slice(queryable);
+            queryable = ExecuteWhere(queryable);
+            queryable = ExecuteOrder(queryable);
+            return ExecuteSlice(queryable);
         }
 
-        public IQueryable<T> QueryFrom(IQueryable<T> queryable, out int total)
+        public IQueryable<T> ExecuteQuery(IQueryable<T> queryable, out int total)
         {
-            queryable = Filter(queryable);
-            queryable = Order(queryable);
-            return Slice(queryable, out total);
+            queryable = ExecuteWhere(queryable);
+            queryable = ExecuteOrder(queryable);
+            return ExecuteSlice(queryable, out total);
         }
 
         public Expression<Func<IQueryable<T>, IQueryable<T>>> BuildWherePlan(Expression<Func<IQueryable<T>, IQueryable<T>>>? baseExpression = null)
