@@ -162,7 +162,7 @@ key=value中value为空即表示为null，没有对空字符串的筛选，空�
 
 ```CSharp
 [HttpGet("api/blogs")]
-public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> query)
+public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]QueryExpression<Blog> query)
 {
     var result = Blogs.AsQueryable().Query(query);
     return Ok(result);
