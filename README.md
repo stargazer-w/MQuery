@@ -24,7 +24,7 @@ List<Blog> Blogs = new List<Blog>
 };
 
 [HttpGet("api/blogs")]
-public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
+public ActionResult<IEnumerable<Blog>> Query(QueryExpression<Blog> query)
 {
     var result = Blogs.AsQueryable().Query(query);
     return Ok(result);
