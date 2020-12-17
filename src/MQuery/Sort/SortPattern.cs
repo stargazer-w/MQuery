@@ -1,6 +1,6 @@
 ﻿namespace MQuery.Sort
 {
-    public enum SortType
+    public enum SortPattern
     {
         Acs = 1,
         Desc = -1,

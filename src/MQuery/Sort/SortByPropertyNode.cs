@@ -11,12 +11,12 @@ namespace MQuery.Sort
     {
         public PropertyNode Property { get; }
 
-        public SortType Type { get; }
+        public SortPattern Type { get; }
 
-        public SortByPropertyNode(PropertyNode property, SortType type)
+        public SortByPropertyNode(PropertyNode property, SortPattern pattern)
         {
             Property = property ?? throw new ArgumentNullException(nameof(property));
-            Type = type;
+            Type = pattern;
         }
     }
 }

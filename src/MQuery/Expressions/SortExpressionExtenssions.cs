@@ -34,7 +34,7 @@ namespace MQuery.Expressions
             var param = Expression.Parameter(elementType);
             var prop = sortByPropertyNode.Property.ToExpression(param);
             var propSelector = Expression.Lambda(prop, param);
-            var orderInfo = (sortByPropertyNode.Type == SortType.Acs ? _orderByInfo : _orderByDescInfo)
+            var orderInfo = (sortByPropertyNode.Type == SortPattern.Acs ? _orderByInfo : _orderByDescInfo)
                                 .MakeGenericMethod(elementType, prop.Type);
             return Expression.Call(orderInfo, target, propSelector);
         }

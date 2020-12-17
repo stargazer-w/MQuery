@@ -19,7 +19,7 @@ namespace MQuery.Sort
             ElementType = elementType;
         }
 
-        public void AddSortByProperty(PropertyNode propertyNode, SortType sortType)
+        public void AddSortByProperty(PropertyNode propertyNode, SortPattern sortType)
         {
             if(propertyNode is null)
                 throw new ArgumentNullException(nameof(propertyNode));
