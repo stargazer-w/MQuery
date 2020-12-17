@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3D3719F0
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MQuery.QueryString", "src\MQuery.QueryString\MQuery.QueryString.csproj", "{5962D428-9C77-45F0-AAB5-94E59ED315F0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MQuery.QueryString.Tests", "src\MQuery.QueryString.Tests\MQuery.QueryString.Tests.csproj", "{A2275D11-4609-487B-9E92-0E2F7712FBB5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,12 +36,17 @@ Global
 		{5962D428-9C77-45F0-AAB5-94E59ED315F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5962D428-9C77-45F0-AAB5-94E59ED315F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5962D428-9C77-45F0-AAB5-94E59ED315F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2275D11-4609-487B-9E92-0E2F7712FBB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2275D11-4609-487B-9E92-0E2F7712FBB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2275D11-4609-487B-9E92-0E2F7712FBB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2275D11-4609-487B-9E92-0E2F7712FBB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F0A161A4-919E-4B91-B650-805CD6E20272} = {3D3719F0-C07F-40C8-AD54-D7AD4B9A372F}
+		{A2275D11-4609-487B-9E92-0E2F7712FBB5} = {3D3719F0-C07F-40C8-AD54-D7AD4B9A372F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {64555DD8-E7FB-4120-8B8D-E4269B95610B}

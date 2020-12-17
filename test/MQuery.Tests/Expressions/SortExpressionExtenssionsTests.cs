@@ -28,7 +28,7 @@ namespace MQuery.Expressions.Tests
             var type = typeof(Foo);
             var sort = new SortDocument(type);
             var ageProp = type.GetProperty("Age");
-            sort.AddSortByProperty(new(ageProp), SortType.Desc);
+            sort.AddSortByProperty(new(ageProp), SortPattern.Desc);
 
             var expr = sort.ToExpression();
             var result = ((Expression<Func<IQueryable<Foo>, IQueryable<Foo>>>)expr).Compile()(source.AsQueryable());
