@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Web;
 using MQuery.Filter;
+using MQuery.Slicing;
 using MQuery.Sort;
 
 namespace MQuery.QueryString
@@ -15,95 +16,81 @@ namespace MQuery.QueryString
     {
         public static Query<T> Parse<T>(string queryString)
         {
-            if (queryString is null)
+            if(queryString is null)
                 throw new ArgumentNullException(nameof(queryString));
 
             var query = new Query<T>();
             var parameters = StructureQueryString(queryString);
             var props = typeof(T).GetProperties();
-            foreach (var pair in parameters.Where(it => !string.IsNullOrEmpty(it.Key)))
+            foreach(var pair in parameters.Where(it => !string.IsNullOrEmpty(it.Key)))
             {
-                try
-                {
-                    var (property, compare) = ParseFilter(props, pair.Key, pair.Value);
-                    query.Document.Filter.AddPropertyCompare(property, compare);
+                if(MatchFilter(pair.Key, pair.Value, query.Document.Filter))
                     continue;
-                }
-                catch (ArgumentException)
-                {
-                }
 
-
-                try
-                {
-                    var (property, sortPatten) = ParseSort(props, pair.Key, pair.Value.First());
-                    query.Document.Sort.AddSortByProperty(property, sortPatten);
+                if(MatchSort(pair.Key, pair.Value.First(), query.Document.Sort))
                     continue;
-                }
-                catch (ArgumentException)
-                {
-                }
 
-                if (pair.Key == "$skip")
-                {
-                    if (!int.TryParse(pair.Value.First(), out var skip))
-                        throw new ParseException($"$skip value must be integer", pair.Key);
-                    query.Document.Slicing.Skip = skip;
+                if(MatchSlicing(pair.Key, pair.Value.First(), query.Document.Slicing))
                     continue;
-                }
-
-                if (pair.Key == "$limit")
-                {
-                    if (!int.TryParse(pair.Value.First(), out var limit))
-                        throw new ParseException($"$limit value must be integer", pair.Key);
-                    query.Document.Slicing.Limit = limit;
-                    continue;
-                }
             }
             return query;
         }
 
-        public static (PropertyNode property, SortPattern sortPattern) ParseSort(
-            IEnumerable<PropertyInfo> propertyInfos,
-            string key,
-            string valueString
-        )
+        public static bool MatchSlicing(string key, string valueString, SlicingDocument document)
+        {
+            if(key == "$skip")
+            {
+                if(!int.TryParse(valueString, out var skip))
+                    throw new ParseException($"$skip value must be integer", key);
+                document.Skip = skip;
+                return true;
+            }
+
+            if(key == "$limit")
+            {
+                if(!int.TryParse(valueString, out var limit))
+                    throw new ParseException($"$limit value must be integer", key);
+                document.Limit = limit;
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool MatchSort(string key, string valueString, SortDocument document)
         {
             var sortMatch = Regex.Match(key, @"^\$sort\[(\w+)\]");
-            if (!sortMatch.Success)
-                throw new ArgumentException("invalid key", nameof(key));
+            if(!sortMatch.Success)
+                return false;
 
             var propName = sortMatch.Groups[1].Value;
 
-            var prop = propertyInfos.FirstOrDefault(p => p.Name.Equals(propName, StringComparison.OrdinalIgnoreCase));
-            if (prop is null)
-                throw new ParseException($"property {propName} is not define", key);
+            var prop = document.ElementType.GetProperty(propName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if(prop is null)
+                return true;
 
-            if (!int.TryParse(valueString, out int pattern) || !Enum.IsDefined(typeof(SortPattern), pattern))
+            if(!int.TryParse(valueString, out int pattern) || !Enum.IsDefined(typeof(SortPattern), pattern))
                 throw new ParseException("sort pattern can only be 1(asc) or -1(desc)", key) { Values = new[] { valueString } };
 
-            return (new PropertyNode(prop), (SortPattern)pattern);
+            document.AddSortByProperty(new PropertyNode(prop), (SortPattern)pattern);
+            return true;
         }
 
-        public static (PropertyNode property, CompareNode compare) ParseFilter(
-            IEnumerable<PropertyInfo> propertyInfos,
-            string key,
-            IEnumerable<string> valueStrings
-        )
+        public static bool MatchFilter(string key, IEnumerable<string> valueStrings, FilterDocument document)
         {
             var filterMatch = Regex.Match(key, @"^(\w+)(\[\$(.+)\])?(\[\d*\])?$", RegexOptions.Compiled);
-            if (!filterMatch.Success)
-                throw new ArgumentException("invalid key", nameof(key));
+            if(!filterMatch.Success)
+                return false;
 
             var propName = filterMatch.Groups[1].Value;
             var opString = filterMatch.Groups[3].Success ? filterMatch.Groups[3].Value : "eq";
 
-            var prop = propertyInfos.FirstOrDefault(p => p.Name.Equals(propName, StringComparison.OrdinalIgnoreCase));
-            if (prop is null)
-                throw new ParseException($"property {propName} is not define", key);
+            var prop = document.ElementType.GetProperty(propName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if(prop is null)
+                return true;
 
-            if (!Enum.TryParse<CompareOperator>(opString, true, out var op))
-                throw new ParseException("invalid operator", key);
+            if(!Enum.TryParse<CompareOperator>(opString, true, out var op))
+                return true;
 
             try
             {
@@ -112,9 +99,10 @@ namespace MQuery.QueryString
                     ? valueStrings.Select(it => ConvertFromString(prop.PropertyType, it))
                     : ConvertFromString(prop.PropertyType, valueStrings.First());
 
-                return (new PropertyNode(prop), new CompareNode(op, value));
+                document.AddPropertyCompare(new PropertyNode(prop), new CompareNode(op, value));
+                return true;
             }
-            catch (ArgumentException e)
+            catch(ArgumentException e)
             {
                 throw new ParseException(e.Message, key, e.InnerException) { Values = valueStrings };
             }
@@ -122,10 +110,10 @@ namespace MQuery.QueryString
 
         private static object ConvertFromString(Type type, string valueString)
         {
-            if (valueString.Length == 0)
+            if(valueString.Length == 0)
                 valueString = null;
 
-            if (type == typeof(string))
+            if(type == typeof(string))
                 return valueString;
 
             var typeConverter = TypeDescriptor.GetConverter(type);
@@ -133,7 +121,7 @@ namespace MQuery.QueryString
             {
                 return typeConverter.ConvertFromString(valueString);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 throw new ArgumentException($"can not convert {valueString ?? "<Empty>"} to type {type.Name}", nameof(valueString), e);
             }

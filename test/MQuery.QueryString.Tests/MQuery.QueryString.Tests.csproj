@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MQuery.QueryString\MQuery.QueryString.csproj" />
+    <ProjectReference Include="..\..\src\MQuery.QueryString\MQuery.QueryString.csproj" />
   </ItemGroup>
 
 </Project>
