@@ -20,10 +20,17 @@ namespace MQuery.Expressions
 
             var qyType = typeof(IQueryable<>).MakeGenericType(slicing.ElementType);
             var qyParam = Expression.Parameter(qyType);
-            var skipInfo = _skipInfo.MakeGenericMethod(slicing.ElementType);
-            var body = Expression.Call(skipInfo, qyParam, Expression.Constant(slicing.Skip));
-            var takeInfo = _takeInfo.MakeGenericMethod(slicing.ElementType);
-            body = Expression.Call(takeInfo, body, Expression.Constant(slicing.Limit));
+            Expression body = qyParam;
+            if(slicing.Skip is int skip)
+            {
+                var skipInfo = _skipInfo.MakeGenericMethod(slicing.ElementType);
+                body = Expression.Call(skipInfo, qyParam, Expression.Constant(skip));
+            }
+            if(slicing.Limit is int limit)
+            {
+                var takeInfo = _takeInfo.MakeGenericMethod(slicing.ElementType);
+                body = Expression.Call(takeInfo, body, Expression.Constant(limit));
+            }
             return Expression.Lambda(body, qyParam);
         }
     }
