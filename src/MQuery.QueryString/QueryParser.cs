@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -12,12 +13,29 @@ using MQuery.Sort;
 namespace MQuery.QueryString
 {
 
-    public class QueryParser
+    public class QueryParser<T>
     {
-        public static Query<T> Parse<T>(string queryString)
+        private readonly PropertyInfo[] _includeProps;
+
+        public QueryParser(params string[] includeProperties)
+        {
+            _includeProps = typeof(T).GetProperties();
+            if(includeProperties.Any())
+                _includeProps = _includeProps.Where(p => includeProperties.Contains(p.Name)).ToArray();
+        }
+
+        private PropertyInfo GetProperty(string name)
+        {
+            return _includeProps.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public Query<T> Parse(string queryString)
         {
             if(queryString is null)
                 throw new ArgumentNullException(nameof(queryString));
+
+            if(queryString.StartsWith("?"))
+                queryString = queryString.Substring(1);
 
             var query = new Query<T>();
             var parameters = StructureQueryString(queryString);
@@ -36,7 +54,7 @@ namespace MQuery.QueryString
             return query;
         }
 
-        public static bool MatchSlicing(string key, string valueString, SlicingDocument document)
+        public bool MatchSlicing(string key, string valueString, SlicingDocument document)
         {
             if(key == "$skip")
             {
@@ -57,7 +75,7 @@ namespace MQuery.QueryString
             return false;
         }
 
-        public static bool MatchSort(string key, string valueString, SortDocument document)
+        public bool MatchSort(string key, string valueString, SortDocument document)
         {
             var sortMatch = Regex.Match(key, @"^\$sort\[(\w+)\]");
             if(!sortMatch.Success)
@@ -65,7 +83,7 @@ namespace MQuery.QueryString
 
             var propName = sortMatch.Groups[1].Value;
 
-            var prop = document.ElementType.GetProperty(propName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            var prop = GetProperty(propName);
             if(prop is null)
                 return true;
 
@@ -76,16 +94,16 @@ namespace MQuery.QueryString
             return true;
         }
 
-        public static bool MatchFilter(string key, IEnumerable<string> valueStrings, FilterDocument document)
+        public bool MatchFilter(string key, IEnumerable<string> valueStrings, FilterDocument document)
         {
-            var filterMatch = Regex.Match(key, @"^(\w+)(\[\$(.+)\])?(\[\d*\])?$", RegexOptions.Compiled);
+            var filterMatch = Regex.Match(key, @"^(\w+)(\[\$(.+?)\])?(\[\d*\])?$");
             if(!filterMatch.Success)
                 return false;
 
             var propName = filterMatch.Groups[1].Value;
             var opString = filterMatch.Groups[3].Success ? filterMatch.Groups[3].Value : "eq";
 
-            var prop = document.ElementType.GetProperty(propName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            var prop = GetProperty(propName);
             if(prop is null)
                 return true;
 
@@ -96,7 +114,7 @@ namespace MQuery.QueryString
             {
                 valueStrings = valueStrings.Where(it => it != null);
                 var value = op == CompareOperator.In || op == CompareOperator.Nin
-                    ? valueStrings.Select(it => ConvertFromString(prop.PropertyType, it))
+                    ? ConvertFromString(prop.PropertyType, valueStrings)
                     : ConvertFromString(prop.PropertyType, valueStrings.First());
 
                 document.AddPropertyCompare(new PropertyNode(prop), new CompareNode(op, value));
@@ -106,6 +124,12 @@ namespace MQuery.QueryString
             {
                 throw new ParseException(e.Message, key, e.InnerException) { Values = valueStrings };
             }
+        }
+
+        private static object ConvertFromString(Type type, IEnumerable<string> valueStrings)
+        {
+            var values = valueStrings.Select(it => ConvertFromString(type, it));
+            return typeof(Enumerable).GetMethod("Cast").MakeGenericMethod(type).Invoke(null, new[] { values });
         }
 
         private static object ConvertFromString(Type type, string valueString)
