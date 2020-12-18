@@ -29,25 +29,7 @@ namespace MQuery.QueryString.Tests
         }
 
         [Test()]
-        public void ParseFilterTest()
-        {
-            var (prop, cmp) = QueryParser.ParseFilter(typeof(Foo).GetProperties(), "name[$eq]", new[] { "Alice" });
-            prop.PropertyInfo.Name.ShouldBe("Name");
-            cmp.Operator.ShouldBe(Filter.CompareOperator.Eq);
-            cmp.Value.ShouldBe("Alice");
-        }
-
-        [Test()]
-        public void ParseFilterTest2()
-        {
-            var (prop, cmp) = QueryParser.ParseFilter(typeof(Foo).GetProperties(), "age", new[] { "2" });
-            prop.PropertyInfo.Name.ShouldBe("Age");
-            cmp.Operator.ShouldBe(Filter.CompareOperator.Eq);
-            cmp.Value.ShouldBe(2);
-        }
-
-        [Test()]
-        public void ParseTest()
+        public void ParsePass()
         {
             var query = QueryParser.Parse<Foo>("name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2");
             var source = new List<Foo>
@@ -68,6 +50,60 @@ namespace MQuery.QueryString.Tests
                       .Skip(1)
                       .Take(2)
             );
+        }
+
+        [Test()]
+        public void ParsePass2()
+        {
+            var query = QueryParser.Parse<Foo>("a=a&name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2");
+            var source = new List<Foo>
+            {
+                new Foo { Name = "Alice", Age = 18 },
+                new Foo { Name = "Bob", Age = 30 },
+                new Foo { Name = "Carl", Age = 50 },
+                new Foo { Name = "David", Age = 20 },
+                new Foo { Name = "Eva", Age = 33 },
+                new Foo { Name = "Frank", Age = 15 },
+            };
+
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.Where(it => it.Name != "Alice" && it.Age >= 18 && it.Age < 40)
+                      .OrderByDescending(it => it.Age)
+                      .Skip(1)
+                      .Take(2)
+            );
+        }
+
+        [Test()]
+        public void ParsePass3()
+        {
+            var query = QueryParser.Parse<Foo>("name[$]=Alice&name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2");
+            var source = new List<Foo>
+            {
+                new Foo { Name = "Alice", Age = 18 },
+                new Foo { Name = "Bob", Age = 30 },
+                new Foo { Name = "Carl", Age = 50 },
+                new Foo { Name = "David", Age = 20 },
+                new Foo { Name = "Eva", Age = 33 },
+                new Foo { Name = "Frank", Age = 15 },
+            };
+
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.Where(it => it.Name != "Alice" && it.Age >= 18 && it.Age < 40)
+                      .OrderByDescending(it => it.Age)
+                      .Skip(1)
+                      .Take(2)
+            );
+        }
+
+        [Test()]
+        public void ParseFail()
+        {
+            Should.Throw<Exception>(() => QueryParser.Parse<Foo>("name[$ne]=Alice&age=a&$sort[age]=-1&$skip=1&$limit=2"));
         }
     }
 }
