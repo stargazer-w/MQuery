@@ -1,0 +1,185 @@
+GET http://localhost:5000/api/books
+### Response:
+[
+  {
+    "name": "乘战车的人",
+    "author": "Riders in the Chariot",
+    "pubDate": "2021-01-01T00:00:00",
+    "price": 98
+  },
+  {
+    "name": "华盛顿广场",
+    "author": "Henry James",
+    "pubDate": "2020-09-01T00:00:00",
+    "price": 24.99
+  },
+  {
+    "name": "风暴眼",
+    "author": "〔澳〕帕特里克·怀特",
+    "pubDate": "2020-01-01T00:00:00",
+    "price": 32.99
+  },
+  {
+    "name": "马人",
+    "author": "〔美〕约翰·厄普代克（John Updike）",
+    "pubDate": "2017-08-01T00:00:00",
+    "price": 33.99
+  },
+  {
+    "name": "消失的艺术",
+    "author": "〔西〕恩里克·比拉-马塔斯",
+    "pubDate": "2018-10-01T00:00:00",
+    "price": 28
+  },
+  {
+    "name": "天竺葵",
+    "author": "〔美〕弗兰纳里·奥康纳",
+    "pubDate": "2016-10-01T00:00:00",
+    "price": 28
+  }
+]
+###
+
+GET http://localhost:5000/api/books?price[$lt]=33
+### Response:
+[
+  {
+    "name": "华盛顿广场",
+    "author": "Henry James",
+    "pubDate": "2020-09-01T00:00:00",
+    "price": 24.99
+  },
+  {
+    "name": "风暴眼",
+    "author": "〔澳〕帕特里克·怀特",
+    "pubDate": "2020-01-01T00:00:00",
+    "price": 32.99
+  },
+  {
+    "name": "消失的艺术",
+    "author": "〔西〕恩里克·比拉-马塔斯",
+    "pubDate": "2018-10-01T00:00:00",
+    "price": 28
+  },
+  {
+    "name": "天竺葵",
+    "author": "〔美〕弗兰纳里·奥康纳",
+    "pubDate": "2016-10-01T00:00:00",
+    "price": 28
+  }
+]
+###
+
+GET http://localhost:5000/api/books?name=风暴眼
+### Response:
+[
+  {
+    "name": "风暴眼",
+    "author": "〔澳〕帕特里克·怀特",
+    "pubDate": "2020-01-01T00:00:00",
+    "price": 32.99
+  }
+]
+###
+
+GET http://localhost:5000/api/books?pubDate[$gte]=2020-01-01
+### Response:
+[
+  {
+    "name": "乘战车的人",
+    "author": "Riders in the Chariot",
+    "pubDate": "2021-01-01T00:00:00",
+    "price": 98
+  },
+  {
+    "name": "华盛顿广场",
+    "author": "Henry James",
+    "pubDate": "2020-09-01T00:00:00",
+    "price": 24.99
+  },
+  {
+    "name": "风暴眼",
+    "author": "〔澳〕帕特里克·怀特",
+    "pubDate": "2020-01-01T00:00:00",
+    "price": 32.99
+  }
+]
+###
+
+GET http://localhost:5000/api/books?name[$in][]=马人&name[$in][]=天竺葵
+### Response:
+[
+  {
+    "name": "马人",
+    "author": "〔美〕约翰·厄普代克（John Updike）",
+    "pubDate": "2017-08-01T00:00:00",
+    "price": 33.99
+  },
+  {
+    "name": "天竺葵",
+    "author": "〔美〕弗兰纳里·奥康纳",
+    "pubDate": "2016-10-01T00:00:00",
+    "price": 28
+  }
+]
+###
+
+GET http://localhost:5000/api/books?$sort[price]=1
+### Response:
+[
+  {
+    "name": "华盛顿广场",
+    "author": "Henry James",
+    "pubDate": "2020-09-01T00:00:00",
+    "price": 24.99
+  },
+  {
+    "name": "消失的艺术",
+    "author": "〔西〕恩里克·比拉-马塔斯",
+    "pubDate": "2018-10-01T00:00:00",
+    "price": 28
+  },
+  {
+    "name": "天竺葵",
+    "author": "〔美〕弗兰纳里·奥康纳",
+    "pubDate": "2016-10-01T00:00:00",
+    "price": 28
+  },
+  {
+    "name": "风暴眼",
+    "author": "〔澳〕帕特里克·怀特",
+    "pubDate": "2020-01-01T00:00:00",
+    "price": 32.99
+  },
+  {
+    "name": "马人",
+    "author": "〔美〕约翰·厄普代克（John Updike）",
+    "pubDate": "2017-08-01T00:00:00",
+    "price": 33.99
+  },
+  {
+    "name": "乘战车的人",
+    "author": "Riders in the Chariot",
+    "pubDate": "2021-01-01T00:00:00",
+    "price": 98
+  }
+]
+###
+
+GET http://localhost:5000/api/books?$skip=1&$limit=2
+### Response:
+[
+  {
+    "name": "华盛顿广场",
+    "author": "Henry James",
+    "pubDate": "2020-09-01T00:00:00",
+    "price": 24.99
+  },
+  {
+    "name": "风暴眼",
+    "author": "〔澳〕帕特里克·怀特",
+    "pubDate": "2020-01-01T00:00:00",
+    "price": 32.99
+  }
+]
+###
