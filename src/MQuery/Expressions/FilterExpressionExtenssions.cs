@@ -23,7 +23,7 @@ namespace MQuery.Expressions
             if(filter is null)
                 throw new ArgumentNullException(nameof(filter));
 
-            var qyParam = Expression.Parameter(typeof(IQueryable<>).MakeGenericType(filter.ElementType));
+            var qyParam = Expression.Parameter(typeof(IQueryable<>).MakeGenericType(filter.ElementType), "qy");
             // 空筛选不做任何处理
             if(!filter.PropertyCompares.Any())
                 return Expression.Lambda(qyParam, qyParam);
@@ -37,7 +37,7 @@ namespace MQuery.Expressions
         private static LambdaExpression BuildPredicate(FilterDocument filter)
         {
             var eleType = filter.ElementType;
-            var param = Expression.Parameter(eleType);
+            var param = Expression.Parameter(eleType, "ele");
             var filterExpr = filter.PropertyCompares
                                    .Select(it => it.ToExpression(param))
                                    .Aggregate(Expression.And);

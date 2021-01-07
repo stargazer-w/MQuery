@@ -19,7 +19,7 @@ namespace MQuery.Expressions
             if(sort is null)
                 throw new ArgumentNullException(nameof(sort));
             var qyType = typeof(IQueryable<>).MakeGenericType(sort.ElementType);
-            var qyParam = Expression.Parameter(qyType);
+            var qyParam = Expression.Parameter(qyType, "qy");
             Expression body = qyParam;
             foreach(var sortByPropertyNode in sort.SortByPropertyNodes.Reverse())
             {
@@ -31,7 +31,7 @@ namespace MQuery.Expressions
 
         public static Expression ToExpression(this SortByPropertyNode sortByPropertyNode, Expression target, Type elementType)
         {
-            var param = Expression.Parameter(elementType);
+            var param = Expression.Parameter(elementType, "ele");
             var prop = sortByPropertyNode.Property.ToExpression(param);
             var propSelector = Expression.Lambda(prop, param);
             var orderInfo = (sortByPropertyNode.Type == SortPattern.Acs ? _orderByInfo : _orderByDescInfo)
