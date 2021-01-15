@@ -1,15 +1,12 @@
 # MQuery
 
 ### 介绍
-基于类似MongoDB查询语法的Http QueryString查询模式。依赖于Asp.Net Core MVC ModelBinding。
+基于类似MongoDB查询语法的Http QueryString查询模式。
 
-只做了第一层的字段查询，写的比较简陋算是抛砖引玉，希望有大佬看上这个思路，可以改出更好用的版本。
+目前实现了`$eq`（等于）`$ne`（不等于）`$gt`（大于）`$gte`（大于等于）`$lt`（小于）`$lte`（小于等于）`$in`（包含于）`$nin`（不包含于）操作符。
 
 ### 使用说明
-
-#### 筛选
-
-##### 数据源和Action配置
+#### 数据源和Action配置
 
 ```CSharp
 List<Blog> Blogs = new List<Blog>
@@ -24,12 +21,14 @@ List<Blog> Blogs = new List<Blog>
 };
 
 [HttpGet("api/blogs")]
-public ActionResult<IEnumerable<Blog>> Query(QueryExpression<Blog> query)
+public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 {
-    var result = Blogs.AsQueryable().Query(query);
+    var result = query.ApplyTo(Blogs.AsQueryable());
     return Ok(result);
 }
 ```
+
+#### 筛选
 
 ##### 等于筛选
 
@@ -162,10 +161,9 @@ key=value中value为空即表示为null，没有对空字符串的筛选，空�
 
 ```CSharp
 [HttpGet("api/blogs")]
-public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]QueryExpression<Blog> query)
+public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> query)
 {
-    var result = Blogs.AsQueryable().Query(query);
-    return Ok(result);
+    //...
 }
 ```
 筛选Id
@@ -289,6 +287,7 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]QueryExpressio
 #### 切片(分页)
 
 `https://localhost:44396/api/blogs?$skip=3&$limit=2`
+
 跳过3项，取2项
 
 ```JSON
