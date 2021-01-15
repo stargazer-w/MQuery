@@ -17,7 +17,7 @@ namespace MQuery.AspNetCore
 
         public IModelBinder GetBinder(ModelBinderProviderContext context)
         {
-            if(context.Metadata.ModelType.GetGenericTypeDefinition() == typeof(Query<>))
+            if(context.Metadata.ModelType.IsGenericType && context.Metadata.ModelType.GetGenericTypeDefinition() == typeof(Query<>))
                 return new QueryBinder(_options);
 
             return null;
