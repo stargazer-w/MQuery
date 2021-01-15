@@ -8,7 +8,7 @@ namespace MQuery.Sort
 {
     public class SortDocument
     {
-        private List<SortByPropertyNode> _sortByProperties = new List<SortByPropertyNode>();
+        private readonly List<SortByPropertyNode> _sortByProperties = new List<SortByPropertyNode>();
 
         public Type ElementType { get; }
 
@@ -24,7 +24,7 @@ namespace MQuery.Sort
             if(propertyNode is null)
                 throw new ArgumentNullException(nameof(propertyNode));
 
-            var oldSort = _sortByProperties.FirstOrDefault(it => it.Property == propertyNode);
+            var oldSort = _sortByProperties.FirstOrDefault(it => it.Property.Equals(propertyNode));
             if(oldSort != null)
                 _sortByProperties.Remove(oldSort);
             _sortByProperties.Add(new SortByPropertyNode(propertyNode, sortType));

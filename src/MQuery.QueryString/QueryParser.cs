@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -15,18 +14,31 @@ namespace MQuery.QueryString
 
     public class QueryParser<T>
     {
-        private readonly PropertyInfo[] _includeProps;
+        private readonly string[]? _includeProps;
 
         public QueryParser(params string[] includeProperties)
         {
-            _includeProps = typeof(T).GetProperties();
             if(includeProperties.Any())
-                _includeProps = _includeProps.Where(p => includeProperties.Contains(p.Name)).ToArray();
+                _includeProps = includeProperties;
         }
 
-        private PropertyInfo GetProperty(string name)
+        private PropertyNode? ParseProperty(string key)
         {
-            return _includeProps.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if(_includeProps?.Contains(key) == false)
+                return null;
+
+            var selectors = key.Split('.');
+            var type = typeof(T);
+            List<PropertyInfo> properties = new List<PropertyInfo>();
+            foreach(var s in selectors)
+            {
+                var p = type.GetProperty(s, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if(p is null)
+                    return null;
+                type = p.PropertyType;
+                properties.Add(p);
+            }
+            return new PropertyNode(properties.First(), properties.Skip(1).ToArray());
         }
 
         public Query<T> Parse(string queryString)
@@ -35,7 +47,7 @@ namespace MQuery.QueryString
                 throw new ArgumentNullException(nameof(queryString));
 
             if(queryString.StartsWith("?"))
-                queryString = queryString.Substring(1);
+                queryString = queryString[1..];
 
             var query = new Query<T>();
             var parameters = StructureQueryString(queryString);
@@ -59,7 +71,7 @@ namespace MQuery.QueryString
             if(key == "$skip")
             {
                 if(!int.TryParse(valueString, out var skip))
-                    throw new ParseException($"$skip value must be integer", key);
+                    throw new ParseException($"$skip value must be integer") { Key = key };
                 document.Skip = skip;
                 return true;
             }
@@ -67,7 +79,7 @@ namespace MQuery.QueryString
             if(key == "$limit")
             {
                 if(!int.TryParse(valueString, out var limit))
-                    throw new ParseException($"$limit value must be integer", key);
+                    throw new ParseException($"$limit value must be integer") { Key = key };
                 document.Limit = limit;
                 return true;
             }
@@ -83,27 +95,27 @@ namespace MQuery.QueryString
 
             var propName = sortMatch.Groups[1].Value;
 
-            var prop = GetProperty(propName);
+            var prop = ParseProperty(propName);
             if(prop is null)
                 return true;
 
             if(!int.TryParse(valueString, out int pattern) || !Enum.IsDefined(typeof(SortPattern), pattern))
-                throw new ParseException("sort pattern can only be 1(asc) or -1(desc)", key) { Values = new[] { valueString } };
+                throw new ParseException("sort pattern can only be 1(asc) or -1(desc)") { Key = key, Values = new[] { valueString } };
 
-            document.AddSortByProperty(new PropertyNode(prop), (SortPattern)pattern);
+            document.AddSortByProperty(prop, (SortPattern)pattern);
             return true;
         }
 
         public bool MatchFilter(string key, IEnumerable<string> valueStrings, FilterDocument document)
         {
-            var filterMatch = Regex.Match(key, @"^(\w+)(\[\$(.+?)\])?(\[\d*\])?$");
+            var filterMatch = Regex.Match(key, @"^([\w\.]+)(\[\$(.+?)\])?(\[\d*\])?$");
             if(!filterMatch.Success)
                 return false;
 
             var propName = filterMatch.Groups[1].Value;
             var opString = filterMatch.Groups[3].Success ? filterMatch.Groups[3].Value : "eq";
 
-            var prop = GetProperty(propName);
+            var prop = ParseProperty(propName);
             if(prop is null)
                 return true;
 
@@ -117,37 +129,38 @@ namespace MQuery.QueryString
                     ? ConvertFromString(prop.PropertyType, valueStrings)
                     : ConvertFromString(prop.PropertyType, valueStrings.First());
 
-                document.AddPropertyCompare(new PropertyNode(prop), new CompareNode(op, value));
+                document.AddPropertyCompare(prop, new CompareNode(op, value));
                 return true;
             }
             catch(ArgumentException e)
             {
-                throw new ParseException(e.Message, key, e.InnerException) { Values = valueStrings };
+                throw new ParseException(e.Message, e.InnerException) { Key = key, Values = valueStrings };
             }
         }
 
         private static object ConvertFromString(Type type, IEnumerable<string> valueStrings)
         {
             var values = valueStrings.Select(it => ConvertFromString(type, it));
-            return typeof(Enumerable).GetMethod("Cast").MakeGenericMethod(type).Invoke(null, new[] { values });
+            return typeof(Enumerable).GetMethod("Cast")!.MakeGenericMethod(type).Invoke(null, new[] { values })!;
         }
 
-        private static object ConvertFromString(Type type, string valueString)
+        private static object? ConvertFromString(Type type, string valueString)
         {
-            if(valueString.Length == 0)
-                valueString = null;
+            string? str = valueString;
+            if(str.Length == 0)
+                str = null;
 
             if(type == typeof(string))
-                return valueString;
+                return str;
 
             var typeConverter = TypeDescriptor.GetConverter(type);
             try
             {
-                return typeConverter.ConvertFromString(valueString);
+                return typeConverter.ConvertFromString(str);
             }
             catch(Exception e)
             {
-                throw new ArgumentException($"can not convert {valueString ?? "<Empty>"} to type {type.Name}", nameof(valueString), e);
+                throw new ArgumentException($"can not convert {str ?? "<Empty>"} to type {type.Name}", nameof(valueString), e);
             }
         }
 
@@ -158,19 +171,11 @@ namespace MQuery.QueryString
                               {
                                   var pair = it.Split('=');
                                   var key = HttpUtility.UrlDecode(pair.First());
-                                  var value = pair.Length > 1 ? HttpUtility.UrlDecode(pair.Last()) : null;
+                                  var value = pair.Length > 1 ? HttpUtility.UrlDecode(pair.Last()) : "";
                                   return (key, value);
                               })
-                              .GroupBy(it => it.key)
-                              .Select(it => (it.Key, Value: it.Select(p => p.value)))
-                              .Aggregate(
-                                  new Dictionary<string, string[]>(),
-                                  (dict, pair) =>
-                                  {
-                                      dict.Add(pair.Key, pair.Value.ToArray());
-                                      return dict;
-                                  }
-                              );
+                              .GroupBy(it => it.key, it => it.value)
+                              .ToDictionary(it => it.Key, it => it.ToArray());
         }
     }
 }

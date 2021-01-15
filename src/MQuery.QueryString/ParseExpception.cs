@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MQuery.QueryString
 {
     public class ParseException : Exception
     {
-        public string Key { get; }
+        public string? Key { get; init; }
 
-        public IEnumerable<string> Values { get; set; }
+        public IEnumerable<string> Values { get; init; } = Enumerable.Empty<string>();
 
-        public ParseException(string message, string key) : base(message)
+        public ParseException()
         {
-            Key = key;
         }
 
-        public ParseException(string message, string key, Exception innerException) : base(message, innerException)
+        public ParseException(string message) : base(message)
         {
-            Key = key;
+        }
+
+        public ParseException(string message, Exception? innerException) : base(message, innerException)
+        {
         }
     }
 }

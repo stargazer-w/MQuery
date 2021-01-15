@@ -9,7 +9,7 @@ namespace MQuery.Filter
 {
     public class FilterDocument
     {
-        private List<PropertyComparesNode> _propertyCompares = new List<PropertyComparesNode>();
+        private readonly List<PropertyComparesNode> _propertyCompares = new List<PropertyComparesNode>();
 
         public Type ElementType { get; }
 
