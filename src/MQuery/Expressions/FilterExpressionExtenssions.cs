@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using MQuery.Filter;
 
 namespace MQuery.Expressions
@@ -69,22 +66,23 @@ namespace MQuery.Expressions
         /// <param name="compareNode"></param>
         /// <param name="property">需要比较的属性表达式</param>
         /// <returns>比较表达式</returns>
-        public static Expression ToExpression(this in CompareNode compareNode, MemberExpression property)
+        public static Expression ToExpression(this CompareNode compareNode, MemberExpression property)
         {
             if(property is null)
                 throw new ArgumentNullException(nameof(property));
 
-            var op = new Dictionary<CompareOperator, Func<Expression, Expression, Expression>>
+            Func<Expression, Expression, Expression> op = compareNode.Operator switch
             {
-                [CompareOperator.Eq] = Expression.Equal,
-                [CompareOperator.Gt] = Expression.GreaterThan,
-                [CompareOperator.Gte] = Expression.GreaterThanOrEqual,
-                [CompareOperator.In] = MoreExpressions.In,
-                [CompareOperator.Lt] = Expression.LessThan,
-                [CompareOperator.Lte] = Expression.LessThanOrEqual,
-                [CompareOperator.Ne] = Expression.NotEqual,
-                [CompareOperator.Nin] = (left, right) => Expression.Not(MoreExpressions.In(left, right))
-            }[compareNode.Operator];
+                CompareOperator.Eq => Expression.Equal,
+                CompareOperator.Gt => Expression.GreaterThan,
+                CompareOperator.Gte => Expression.GreaterThanOrEqual,
+                CompareOperator.In => MoreExpressions.In,
+                CompareOperator.Lt => Expression.LessThan,
+                CompareOperator.Lte => Expression.LessThanOrEqual,
+                CompareOperator.Ne => Expression.NotEqual,
+                CompareOperator.Nin => (left, right) => Expression.Not(MoreExpressions.In(left, right)),
+                _ => throw new ArgumentException("error compare operator", nameof(compareNode)),
+            };
 
             var val = Expression.Constant(compareNode.Value);
             return op(property, val);

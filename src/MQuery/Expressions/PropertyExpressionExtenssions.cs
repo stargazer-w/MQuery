@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MQuery.Expressions
 {
@@ -21,7 +17,12 @@ namespace MQuery.Expressions
                 throw new ArgumentNullException(nameof(propertyNode));
             if(target is null)
                 throw new ArgumentNullException(nameof(target));
-            return Expression.Property(target, propertyNode.PropertyInfo);
+            var expr = Expression.Property(target, propertyNode.PropertyInfo);
+            foreach(var sub in propertyNode.SubProertyInfos)
+            {
+                expr = Expression.Property(expr, sub);
+            }
+            return expr;
         }
     }
 }
