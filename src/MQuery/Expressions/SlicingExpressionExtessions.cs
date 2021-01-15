@@ -19,7 +19,7 @@ namespace MQuery.Expressions
                 throw new ArgumentNullException(nameof(slicing));
 
             var qyType = typeof(IQueryable<>).MakeGenericType(slicing.ElementType);
-            var qyParam = Expression.Parameter(qyType);
+            var qyParam = Expression.Parameter(qyType, "qy");
             Expression body = qyParam;
             if(slicing.Skip is int skip)
             {
