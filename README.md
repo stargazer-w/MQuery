@@ -179,7 +179,7 @@ var result = query.SliceTo(blogs);
 #### 多条件筛选
 筛选4月的博客
 
-`https://localhost:44396/api/blogs?createTime[$gte]=2020-4-1&createTime[$lt]=2020-5-1`
+`/api/blogs?createTime[$gte]=2020-4-1&createTime[$lt]=2020-5-1`
 
 ```JSON
 [
@@ -200,7 +200,7 @@ var result = query.SliceTo(blogs);
 
 #### 空值筛选
 
-`https://localhost:44396/api/blogs?title=`
+`/api/blogs?title=`
 
 key value对中value为空即表示为null，没有对空字符串的筛选，空字符串被认为是没有额外意义的，与null相同。
 
@@ -217,7 +217,7 @@ key value对中value为空即表示为null，没有对空字符串的筛选，�
 
 不可为空的值会验证失败
 
-`https://localhost:44396/api/blogs?id=`
+`/api/blogs?id=`
 
 ```JSON
 {
@@ -235,7 +235,7 @@ key value对中value为空即表示为null，没有对空字符串的筛选，�
 
 #### 排序
 
-`https://localhost:44396/api/blogs?$sort[likes]=-1`
+`/api/blogs?$sort[likes]=-1`
 
 根据likes倒序，1为正序，其他值非法。
 
@@ -288,7 +288,7 @@ key value对中value为空即表示为null，没有对空字符串的筛选，�
 
 #### 分页
 
-`https://localhost:44396/api/blogs?$skip=3&$limit=2`
+`/api/blogs?$skip=3&$limit=2`
 
 跳过3项，取2项
 
