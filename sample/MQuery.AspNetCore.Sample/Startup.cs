@@ -27,7 +27,11 @@ namespace MQuery.AspNetCore.Sample
         {
             services.AddControllers(options=> 
             {
-                options.AddMQuery(o => o.DefaultLimit = 50);
+                options.AddMQuery(o => 
+                {
+                    o.DefaultLimit = 50;
+                    o.MaxLimit = 50;
+                });
             });
         }
 
