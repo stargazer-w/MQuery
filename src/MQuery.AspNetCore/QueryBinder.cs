@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -13,9 +10,9 @@ namespace MQuery.AspNetCore
 {
     public class QueryBinder : IModelBinder
     {
-        private readonly BinderOptions _options;
+        private readonly ParserOptions _options;
 
-        public QueryBinder(BinderOptions options)
+        public QueryBinder(ParserOptions options)
         {
             _options = options;
         }
@@ -27,27 +24,19 @@ namespace MQuery.AspNetCore
             var queryString = bindingContext.HttpContext.Request.QueryString;
 
             var parserType = typeof(QueryParser<>).MakeGenericType(elementType);
-            string[] include = Array.Empty<string>();
             if (
                 bindingContext.ModelMetadata is DefaultModelMetadata meta
                 && meta.Attributes.ParameterAttributes.FirstOrDefault(a => a is BindAttribute) is BindAttribute bind
             )
             {
-                include = bind.Include;
+                _options.IncludeProps ??= new();
+                _options.IncludeProps.AddRange(bind.Include);
             }
-            var parser = Activator.CreateInstance(parserType, include);
+            var parser = Activator.CreateInstance(parserType, _options);
 
             try
             {
                 var query = parserType.GetMethod("Parse").Invoke(parser, new object[] { queryString.ToString() });
-                var document = queryType.GetProperty("Document").GetValue(query) as QueryDocument;
-
-                if(document.Slicing.Limit == null)
-                    document.Slicing.Limit = _options.DefaultLimit;
-
-                if(document.Slicing.Limit > _options.MaxLimit)
-                    document.Slicing.Limit = _options.MaxLimit.Value;
-
                 bindingContext.Result = ModelBindingResult.Success(query);
             }
             catch (ParseException e)
@@ -58,12 +47,5 @@ namespace MQuery.AspNetCore
 
             return Task.CompletedTask;
         }
-    }
-
-    public class BinderOptions
-    {
-        public int DefaultLimit { get; set; } = 1;
-
-        public int? MaxLimit { get; set; }
     }
 }

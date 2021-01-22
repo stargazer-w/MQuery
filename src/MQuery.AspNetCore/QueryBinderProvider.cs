@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using MQuery.QueryString;
 
 namespace MQuery.AspNetCore
 {
     public class QueryBinderProvider : IModelBinderProvider
     {
-        private readonly BinderOptions _options;
+        private readonly ParserOptions _options;
 
-        public QueryBinderProvider(BinderOptions options)
+        public QueryBinderProvider(ParserOptions options)
         {
             _options = options;
         }
