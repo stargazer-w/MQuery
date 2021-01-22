@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -14,12 +13,22 @@ namespace MQuery.QueryString
 
     public class QueryParser<T>
     {
-        private readonly string[]? _includeProps;
+        private readonly List<string>? _includeProps;
+        private readonly List<IValueParser> _valueParsers = new();
+        private readonly int? _defaultLimit;
+        private readonly int? _maxLimit;
 
-        public QueryParser(params string[] includeProperties)
+        public QueryParser() : this(new())
         {
-            if(includeProperties.Any())
-                _includeProps = includeProperties;
+        }
+
+        public QueryParser(ParserOptions options)
+        {
+            _includeProps = options.IncludeProps;
+            _valueParsers.Add(new BaseValueParser());
+            _valueParsers.InsertRange(0, options.ValueParsers);
+            _defaultLimit = options.DefaultLimit;
+            _maxLimit = options.MaxLimit;
         }
 
         private PropertyNode? ParseProperty(string key)
@@ -63,6 +72,11 @@ namespace MQuery.QueryString
                 if(MatchSlicing(pair.Key, pair.Value.First(), query.Document.Slicing))
                     continue;
             }
+
+            query.Document.Slicing.Limit ??= _defaultLimit;
+            if(query.Document.Slicing.Limit > _maxLimit)
+                query.Document.Slicing.Limit = _maxLimit;
+
             return query;
         }
 
@@ -138,29 +152,29 @@ namespace MQuery.QueryString
             }
         }
 
-        private static object ConvertFromString(Type type, IEnumerable<string> valueStrings)
+        private object ConvertFromString(Type type, IEnumerable<string> valueStrings)
         {
             var values = valueStrings.Select(it => ConvertFromString(type, it));
             return typeof(Enumerable).GetMethod("Cast")!.MakeGenericMethod(type).Invoke(null, new[] { values })!;
         }
 
-        private static object? ConvertFromString(Type type, string valueString)
+        private object? ConvertFromString(Type type, string valueString)
         {
             string? str = valueString;
             if(str.Length == 0)
                 str = null;
 
-            if(type == typeof(string))
-                return str;
+            var typeConverter = _valueParsers.FirstOrDefault(it => it.CanParse(type));
+            if(typeConverter is null)
+                throw new ParseException($"Type {type} can not be convert from string");
 
-            var typeConverter = TypeDescriptor.GetConverter(type);
             try
             {
-                return typeConverter.ConvertFromString(str);
+                return typeConverter.Parse(str, type);
             }
             catch(Exception e)
             {
-                throw new ArgumentException($"can not convert {str ?? "<Empty>"} to type {type.Name}", nameof(valueString), e);
+                throw new ArgumentException($"Can not convert {str ?? "<Empty>"} to type {type.Name}", nameof(valueString), e);
             }
         }
 
