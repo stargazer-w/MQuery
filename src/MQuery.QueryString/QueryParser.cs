@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -136,20 +137,37 @@ namespace MQuery.QueryString
             if(!Enum.TryParse<CompareOperator>(opString, true, out var op))
                 return true;
 
+            CompareNode compareNode;
             try
             {
-                valueStrings = valueStrings.Where(it => it != null);
-                var value = op == CompareOperator.In || op == CompareOperator.Nin
-                    ? ConvertFromString(prop.PropertyType, valueStrings)
-                    : ConvertFromString(prop.PropertyType, valueStrings.First());
-
-                document.AddPropertyCompare(prop, new CompareNode(op, value));
-                return true;
+                if(prop.PropertyType.GetInterface("ICollection`1") is { } colType)
+                {
+                    var eleType = colType.GetGenericArguments().First();
+                    compareNode = CreateCompareNode(eleType, op, valueStrings);
+                }
+                else
+                {
+                    compareNode = CreateCompareNode(prop.PropertyType, op, valueStrings);
+                }
             }
-            catch(ArgumentException e)
+            catch(InvalidOperationException e)
             {
                 throw new ParseException(e.Message, e.InnerException) { Key = key, Values = valueStrings };
             }
+
+            document.AddPropertyCompare(prop, compareNode);
+            return true;
+        }
+
+        private CompareNode CreateCompareNode(Type type, CompareOperator op, IEnumerable<string> valueStrings)
+        {
+            valueStrings = valueStrings.Where(it => it != null);
+            var value = op switch
+            {
+                CompareOperator.In or CompareOperator.Nin => ConvertFromString(type, valueStrings),
+                _ => ConvertFromString(type, valueStrings.First())
+            };
+            return new CompareNode(op, value);
         }
 
         private object ConvertFromString(Type type, IEnumerable<string> valueStrings)
@@ -166,7 +184,7 @@ namespace MQuery.QueryString
 
             var typeConverter = _valueParsers.FirstOrDefault(it => it.CanParse(type));
             if(typeConverter is null)
-                throw new ParseException($"Type {type} can not be convert from string");
+                throw new NotSupportedException($"Type {type} can not be convert from query");
 
             try
             {
@@ -174,7 +192,7 @@ namespace MQuery.QueryString
             }
             catch(Exception e)
             {
-                throw new ArgumentException($"Can not convert {str ?? "<Empty>"} to type {type.Name}", nameof(valueString), e);
+                throw new InvalidOperationException($"Can not convert {str ?? "<Empty>"} to type {type.Name}", e);
             }
         }
 
