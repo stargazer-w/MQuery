@@ -9,6 +9,7 @@ namespace MQuery.Expressions
     public static class FilterExpressionExtenssions
     {
         private static readonly MethodInfo _whereInfo = typeof(Queryable).GetMethods().First(m => m.ToString() == "System.Linq.IQueryable`1[TSource] Where[TSource](System.Linq.IQueryable`1[TSource], System.Linq.Expressions.Expression`1[System.Func`2[TSource,System.Boolean]])");
+        private static readonly MethodInfo _anyInfo = typeof(Enumerable).GetMethods().First(m => m.ToString() == "Boolean Any[TSource](System.Collections.Generic.IEnumerable`1[TSource], System.Func`2[TSource,System.Boolean])");
 
         /// <summary>
         /// 将筛选文档转换为筛选表达式
@@ -54,7 +55,20 @@ namespace MQuery.Expressions
             if(target is null)
                 throw new ArgumentNullException(nameof(target));
 
+            var type = propertyComparesNode.Property.PropertyType;
             var propertySelector = propertyComparesNode.Property.ToExpression(target);
+            if(type.GetInterface("ICollection`1") is { } colType)
+            {
+                var eleType = colType.GetGenericArguments().First();
+                var anyInfo = _anyInfo.MakeGenericMethod(eleType);
+                var param = Expression.Parameter(eleType, "ele");
+                var body = propertyComparesNode.Compares
+                                               .Select(it => it.ToExpression(param))
+                                               .Aggregate(Expression.And);
+                var predicate = Expression.Lambda(body, param);
+                return Expression.Call(anyInfo, propertySelector, predicate);
+            }
+
             return propertyComparesNode.Compares
                                        .Select(it => it.ToExpression(propertySelector))
                                        .Aggregate(Expression.And);
@@ -66,7 +80,7 @@ namespace MQuery.Expressions
         /// <param name="compareNode"></param>
         /// <param name="property">需要比较的属性表达式</param>
         /// <returns>比较表达式</returns>
-        public static Expression ToExpression(this CompareNode compareNode, MemberExpression property)
+        public static Expression ToExpression(this CompareNode compareNode, Expression property)
         {
             if(property is null)
                 throw new ArgumentNullException(nameof(property));
