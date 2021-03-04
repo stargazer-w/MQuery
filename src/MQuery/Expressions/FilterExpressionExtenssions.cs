@@ -98,8 +98,17 @@ namespace MQuery.Expressions
                 _ => throw new ArgumentException("error compare operator", nameof(compareNode)),
             };
 
-            var val = Expression.Constant(compareNode.Value);
+            Expression val = Expression.Constant(compareNode.Value);
+            CastIfNullable(property.Type, ref val);
             return op(property, val);
+        }
+
+        private static void CastIfNullable(Type type, ref Expression val)
+        {
+            if(Nullable.GetUnderlyingType(type) != null)
+            {
+                val = Expression.Convert(val, type);
+            }
         }
     }
 }
