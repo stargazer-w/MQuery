@@ -1,7 +1,7 @@
 # MQuery
 
 ### 介绍
-基于MongoDB查询语法的Http QueryString查询模式。
+基于MongoDB查询语法的启发，将JSON解析为表达式树，并以JSON的QueryString形式构建动态查询。
 
 目前实现了`$eq`（等于）`$ne`（不等于）`$gt`（大于）`$gte`（大于等于）`$lt`（小于）`$lte`（小于等于）`$in`（包含于）`$nin`（不包含于）筛选操作符；`$sort`排序操作符；`$skip`、`$limit`分页操作符。
 
@@ -21,14 +21,18 @@ public void ConfigureServices(IServiceCollection services)
         });
     });
 }
+```
+`AddMQuery`会在MvcOptions中添加Query\<T>的模型绑定，从而在HTTP请求中解析并创建实例。
 
-// 在ApiController中
+在ApiController中
+```CSharp
 [HttpGet("api/blogs")]
 public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 {
     // ...
 }
 ```
+
 过滤属性
 
 只提供部分可查询属性，自动忽略对不可查询属性的查询操作
@@ -40,7 +44,6 @@ public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> qu
     //...
 }
 ```
-`AddMQuery`会在MvcOptions中添加Query\<T>的模型绑定，从而在HTTP请求中解析并创建实例。
 
 #### 从Query字符串中创建Query\<T>
 ```CSharp
@@ -50,18 +53,18 @@ var query = new QueryParser<Foo>().Parse("name[$ne]=Alice&age[$gte]=18&age[$lt]=
 从JSON形式去看
 ```JSON
 {
-  "<propName1>": { // 对与一个属性
-    "<compareOperator>": "<value1>", // 一个比较操作
-    "<compareOperator>": "<value2>" // 另一个比较操作
+  "<prop1>": { // 对于一个属性
+    "<op>": "<val1>", // 一个比较操作
+    "<op>": "<val2>" // 另一个比较操作
     // ...
   },
-  "<propName2>": { // 其他属性
-    "<compareOperator>": "<value1>", // 一个比较操作
-    "<compareOperator>": "<value2>" // 另一个比较操作
+  "<prop2>": { // 其他属性
+    "<op>": "<val1>", // 一个比较操作
+    "<op>": "<val2>" // 另一个比较操作
     // ...
   }, // 每一个属性与其操作都是and连接，暂不支持or查询
   "$sort":{
-    "<propName>": 1 // 根据一个属性进行正序排序，-1则为倒序。可以指定多个，先指定的有更高优先级。
+    "<op>": 1 // 根据一个属性进行正序排序，-1则为倒序。可以指定多个，先指定的有更高优先级。
   },
   "$skip": 0, // 指定分页起始位置
   "$limit": 20 // 指定分页条目数
@@ -69,11 +72,11 @@ var query = new QueryParser<Foo>().Parse("name[$ne]=Alice&age[$gte]=18&age[$lt]=
 ```
 用QueryString表示
 ```
-<propName1>[<compareOperator1>]=<value1>
-&<propName2>[<compareOperator2>]=<value2>
-&<propName1>[<compareOperator1>]=<value1>
-&<propName2>[<compareOperator2>]=<value2>
-&$sort[propName]=1
+<prop1>[<op>]=<val1>
+&<prop1>[<op>]=<val2>
+&<prop2>[<op>]=<val1>
+&<prop2>[<op>]=<val2>
+&$sort[<op>]=1
 &$skip=0
 &$limit=20
 ```
