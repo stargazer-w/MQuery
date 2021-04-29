@@ -117,6 +117,7 @@ var result = query.SliceTo(blogs);
 #### 等于筛选
 
 `/api/blogs?title=Web%20Api`
+没有操作符时，默认就是`$eq`
 
 ```JSON
 [
