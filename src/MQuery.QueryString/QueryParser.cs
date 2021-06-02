@@ -104,7 +104,7 @@ namespace MQuery.QueryString
 
         public bool MatchSort(string key, string valueString, SortDocument document)
         {
-            var sortMatch = Regex.Match(key, @"^\$sort\[(\w+)\]");
+            var sortMatch = Regex.Match(key, @"^\$sort\[([\w\.]+)\]");
             if(!sortMatch.Success)
                 return false;
 
