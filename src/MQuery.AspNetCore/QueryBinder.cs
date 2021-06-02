@@ -39,6 +39,7 @@ namespace MQuery.AspNetCore
             {
                 var query = parserType.GetMethod("Parse").Invoke(parser, new object[] { queryString.ToString() });
                 bindingContext.Result = ModelBindingResult.Success(query);
+                bindingContext.ValidationState.Add(query, new() { SuppressValidation = true });
             }
             catch(TargetInvocationException e) when(e.InnerException is ParseException pe)
             {
