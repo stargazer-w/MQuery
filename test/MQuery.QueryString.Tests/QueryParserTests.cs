@@ -22,7 +22,7 @@ namespace MQuery.QueryString.Tests
         {
             public string Address { get; set; }
 
-            public DateTime CreatedAt { get; set; }
+            public DateTimeOffset CreatedAt { get; set; }
         }
 
         [Test()]
@@ -164,6 +164,29 @@ namespace MQuery.QueryString.Tests
 
             result.ShouldBe(
                 source.Where(it => it.Bar.Address == "cde" && it.Bar.CreatedAt > new DateTime(2000, 1, 1))
+            );
+        }
+
+        [Test()]
+        public void ParseWithDateTimeOffset()
+        {
+            var query = new QueryParser<Foo>().Parse("bar.address=cde&bar.createdAt[$gt]=2000-1-1+08:00");
+            var source = new List<Foo>
+            {
+                new Foo { Bar = new Bar{ Address = "abc", CreatedAt = new DateTime(1888,5,3)} },
+                new Foo { Bar = new Bar{ Address = "abc", CreatedAt = new DateTime(1964,5,3)} },
+                new Foo { Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(1204,5,3)} },
+                new Foo { Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(2001,5,3)} },
+                new Foo { Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(2021,5,3)} },
+                new Foo { Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(1983,5,3)} },
+            };
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.Where(it =>
+                    it.Bar.Address == "cde"
+                    && it.Bar.CreatedAt > new DateTimeOffset(new DateTime(2000, 1, 1), TimeSpan.FromHours(8))
+                )
             );
         }
     }
