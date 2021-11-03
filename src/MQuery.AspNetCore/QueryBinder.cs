@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -24,7 +25,7 @@ namespace MQuery.AspNetCore
             var queryString = bindingContext.HttpContext.Request.QueryString;
 
             var parserType = typeof(QueryParser<>).MakeGenericType(elementType);
-            if (
+            if(
                 bindingContext.ModelMetadata is DefaultModelMetadata meta
                 && meta.Attributes.ParameterAttributes.FirstOrDefault(a => a is BindAttribute) is BindAttribute bind
             )
@@ -38,10 +39,11 @@ namespace MQuery.AspNetCore
             {
                 var query = parserType.GetMethod("Parse").Invoke(parser, new object[] { queryString.ToString() });
                 bindingContext.Result = ModelBindingResult.Success(query);
+                bindingContext.ValidationState.Add(query, new() { SuppressValidation = true });
             }
-            catch (ParseException e)
+            catch(TargetInvocationException e) when(e.InnerException is ParseException pe)
             {
-                bindingContext.ModelState.AddModelError(e.Key, e.Message);
+                bindingContext.ModelState.AddModelError(pe.Key, pe.Message);
                 bindingContext.Result = ModelBindingResult.Failed();
             }
 
