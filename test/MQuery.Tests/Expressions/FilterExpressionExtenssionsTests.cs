@@ -105,5 +105,30 @@ namespace MQuery.Expressions.Tests
 
             result.ShouldBe(source);
         }
+
+        public class Bar
+        {
+            public Foo Foo { get; set; }
+        }
+
+        [Test]
+        public void NestedEq()
+        {
+            var source = new List<Bar>
+            {
+                new() { Foo = new Foo { Name = "Alice", Age = 18 } },
+                new() { Foo = new Foo { Name = "Bob", Age = 30 } },
+                new() { Foo = new Foo { Name = "Carl", Age = 50 } }
+            };
+            var barType = typeof(Bar);
+            var fooType = typeof(Foo);
+            var filter = new FilterDocument(barType);
+            filter.AddPropertyCompare(new PropertyNode(barType.GetProperty("Foo")!, fooType.GetProperty("Age")!), new CompareNode(CompareOperator.Eq, 18));
+
+            var expr = filter.ToExpression();
+            var result = ((Expression<Func<IQueryable<Bar>, IQueryable<Bar>>>)expr).Compile()(source.AsQueryable());
+
+            result.ShouldBe(source.Where(x => x.Foo.Age == 18));
+        }
     }
 }
