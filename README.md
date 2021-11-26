@@ -1,20 +1,51 @@
 # MQuery
 
-### 介绍
-基于MongoDB查询语法的启发，将JSON解析为表达式树，并以JSON的QueryString形式构建动态查询。
+## 使用 MQuery 你能得到什么？
 
-目前实现了`$eq`（等于）`$ne`（不等于）`$gt`（大于）`$gte`（大于等于）`$lt`（小于）`$lte`（小于等于）`$in`（包含于）`$nin`（不包含于）筛选操作符；`$sort`排序操作符；`$skip`、`$limit`分页操作符。
+使用 MQuery 只需要个位数的代码量，就能构建 ASP.NET Core WebApi 上的任意字段的简单查询，例如
 
-### 使用说明
+原始数据
 
-#### 从ASP.NET Core中创建Query\<T>
+```JSON
+[
+    { "id": 1, "username": "Alice", "age": 18, "country": "USA" },
+    { "id": 2, "username": "Bob", "age": 20, "country": "UK" },
+    { "id": 3, "username": "Carl", "age": 47, "country": "Canada" },
+    { "id": 4, "username": "Daniel", "age": 50, "country": "USA" },
+    { "id": 5, "username": "Eva", "age": 35, "country": "Poland" },
+    { "id": 6, "username": "Fiona", "age": null, "country": "Russia" },
+]
+```
+
+查询 username 为“Alice”的数据
+
+```
+{your-api-path}?username=Alice
+```
+
+结果
+
+```JSON
+[
+    { "id": 1, "username": "Alice", "age": 18, "country": "USA" },
+]
+```
+
+☞ [具体语法](docs/syntax.md)
+
+## 如何使用
+
+### 在 ASP.NET Core WebApi 中使用MQuery
+
+Startup.cs
+
 ```CSharp
-// 在StartUp中
+
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddControllers(options=> 
+    services.AddControllers(options=>
     {
-        options.AddMQuery(o => 
+        options.AddMQuery(o =>
         {
             o.DefaultLimit = 50; // 设置默认的分页条目数
             o.MaxLimit = 50; // 设置最大的分页条目数
@@ -22,294 +53,39 @@ public void ConfigureServices(IServiceCollection services)
     });
 }
 ```
-`AddMQuery`会在MvcOptions中添加Query\<T>的模型绑定，从而在HTTP请求中解析并创建实例。
 
-在ApiController中
+BlogsController.cs
+
 ```CSharp
 [HttpGet("api/blogs")]
 public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 {
-    // ...
+    return query.ApplyTo(db.Blogs).ToList();
 }
 ```
 
-过滤属性
+你也可以单独进行筛选、排序以及分页
 
-只提供部分可查询属性，自动忽略对不可查询属性的查询操作
+单独进行筛选
 
 ```CSharp
-[HttpGet("api/blogs")]
-public ActionResult<IEnumerable<Blog>> Query([Bind("Id", "Title")]Query<Blog> query)
-{
-    //...
-}
+query.FilterTo(blogs);
 ```
 
-#### 从Query字符串中创建Query\<T>
+单独进行排序
+
+```CSharp
+query.SortTo(blogs);
+```
+
+单独进行分页
+
+```CSharp
+query.SliceTo(blogs);
+```
+
+### 从字符串中创建Query
+
 ```CSharp
 var query = new QueryParser<Foo>().Parse("name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2");
 ```
-##### 语法规则
-从JSON形式去看
-```JSON
-{
-  "<prop1>": { // 对于一个属性
-    "<op>": "<val1>", // 一个比较操作
-    "<op>": "<val2>" // 另一个比较操作
-    // ...
-  },
-  "<prop2>": { // 其他属性
-    "<op>": "<val1>", // 一个比较操作
-    "<op>": "<val2>" // 另一个比较操作
-    // ...
-  }, // 每一个属性与其操作都是and连接，暂不支持or查询
-  "$sort":{
-    "<op>": 1 // 根据一个属性进行正序排序，-1则为倒序。可以指定多个，先指定的有更高优先级。
-  },
-  "$skip": 0, // 指定分页起始位置
-  "$limit": 20 // 指定分页条目数
-}
-```
-用QueryString表示
-```
-<prop1>[<op>]=<val1>
-&<prop1>[<op>]=<val2>
-&<prop2>[<op>]=<val1>
-&<prop2>[<op>]=<val2>
-&$sort[<op>]=1
-&$skip=0
-&$limit=20
-```
-
-
-#### 使用Query\<T>来查询IQueryable<T>
-```CSharp
-var blogs = new List<Blog>
-{
-    new Blog {Id = 1, Title = "IOC-DI", CreateTime = new DateTime(2020, 3, 26), Likes = null},
-    new Blog {Id = 2, Title = "MVC", CreateTime = new DateTime(2020, 4, 1), Likes = 1024},
-    new Blog {Id = 3, Title = "Blazor", CreateTime = new DateTime(2020, 5, 8), Likes = 6412},
-    new Blog {Id = 4, Title = "Web Api", CreateTime = new DateTime(2020, 3, 2), Likes = 8888},
-    new Blog {Id = 5, Title = "SignalR", CreateTime = new DateTime(2020, 4, 12), Likes = 102},
-    new Blog {Id = 6, Title = "gRPC", CreateTime = new DateTime(2020, 6, 30), Likes = 102},
-    new Blog {Id = 7, Title = null, CreateTime = new DateTime(2020, 3, 26), Likes = 3},
-}.AsQueryable();
-```
-以筛选、排序和分页的顺序执行所有查询
-```CSharp
-var result = query.ApplyTo(blogs);
-```
-单独进行筛选
-```CSharp
-var result = query.FilterTo(blogs);
-```
-单独进行排序
-```CSharp
-var result = query.SortTo(blogs);
-```
-单独进行分页
-```CSharp
-var result = query.SliceTo(blogs);
-```
-
-### 例子
-
-#### 等于筛选
-
-`/api/blogs?title=Web%20Api`
-没有操作符时，默认就是`$eq`
-
-```JSON
-[
-  {
-    "id": 4,
-    "title": "Web Api",
-    "createTime": "2020-03-02T00:00:00",
-    "likes": 8888
-  }
-]
-```
-
-#### 大于筛选
-
-`/api/blogs?likes[$gt]=500`
-
-```JSON
-[
-  {
-    "id": 2,
-    "title": "MVC",
-    "createTime": "2020-04-01T00:00:00",
-    "likes": 1024
-  },
-  {
-    "id": 3,
-    "title": "Blazor",
-    "createTime": "2020-05-08T00:00:00",
-    "likes": 6412
-  },
-  {
-    "id": 4,
-    "title": "Web Api",
-    "createTime": "2020-03-02T00:00:00",
-    "likes": 8888
-  }
-]
-```
-
-#### 包含于筛选
-
-包含于是多值的，所以要额外带一对中括号
-
-`/api/blogs?title[$in][]=MVC&title[$in][]=Blazor`
-
-```JSON
-[
-  {
-    "id": 2,
-    "title": "MVC",
-    "createTime": "2020-04-01T00:00:00",
-    "likes": 1024
-  },
-  {
-    "id": 3,
-    "title": "Blazor",
-    "createTime": "2020-05-08T00:00:00",
-    "likes": 6412
-  }
-]
-```
-
-#### 多条件筛选
-筛选4月的博客
-
-`/api/blogs?createTime[$gte]=2020-4-1&createTime[$lt]=2020-5-1`
-
-```JSON
-[
-  {
-    "id": 2,
-    "title": "MVC",
-    "createTime": "2020-04-01T00:00:00",
-    "likes": 1024
-  },
-  {
-    "id": 5,
-    "title": "SignalR",
-    "createTime": "2020-04-12T00:00:00",
-    "likes": 102
-  }
-]
-```
-
-#### 空值筛选
-
-`/api/blogs?title=`
-
-key value对中value为空即表示为null，没有对空字符串的筛选，空字符串被认为是没有额外意义的，与null相同。
-
-```JSON
-[
-  {
-    "id": 7,
-    "title": null,
-    "createTime": "2020-03-26T00:00:00",
-    "likes": 3
-  }
-]
-```
-
-不可为空的值会验证失败
-
-`/api/blogs?id=`
-
-```JSON
-{
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-  "title": "One or more validation errors occurred.",
-  "status": 400,
-  "traceId": "|2d44fb44-4ac839ff4e4fe16e.",
-  "errors": {
-    "id": [
-      "Can not convert {null} to type Int32."
-    ]
-  }
-}
-```
-
-#### 排序
-
-`/api/blogs?$sort[likes]=-1`
-
-根据likes倒序，1为正序，其他值非法。
-
-```JSON
-[
-  {
-    "id": 4,
-    "title": "Web Api",
-    "createTime": "2020-03-02T00:00:00",
-    "likes": 8888
-  },
-  {
-    "id": 3,
-    "title": "Blazor",
-    "createTime": "2020-05-08T00:00:00",
-    "likes": 6412
-  },
-  {
-    "id": 2,
-    "title": "MVC",
-    "createTime": "2020-04-01T00:00:00",
-    "likes": 1024
-  },
-  {
-    "id": 5,
-    "title": "SignalR",
-    "createTime": "2020-04-12T00:00:00",
-    "likes": 102
-  },
-  {
-    "id": 6,
-    "title": "gRPC",
-    "createTime": "2020-06-30T00:00:00",
-    "likes": 102
-  },
-  {
-    "id": 7,
-    "title": null,
-    "createTime": "2020-03-26T00:00:00",
-    "likes": 3
-  },
-  {
-    "id": 1,
-    "title": "IOC-DI",
-    "createTime": "2020-03-26T00:00:00",
-    "likes": null
-  }
-]
-```
-
-#### 分页
-
-`/api/blogs?$skip=3&$limit=2`
-
-跳过3项，取2项
-
-```JSON
-[
-  {
-    "id": 4,
-    "title": "Web Api",
-    "createTime": "2020-03-02T00:00:00",
-    "likes": 8888
-  },
-  {
-    "id": 5,
-    "title": "SignalR",
-    "createTime": "2020-04-12T00:00:00",
-    "likes": 102
-  }
-]
-```
-
