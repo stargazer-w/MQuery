@@ -27,6 +27,7 @@ namespace MQuery.QueryString
         {
             _includeProps = options.IncludeProps;
             _valueParsers.Add(new BaseValueParser());
+            _valueParsers.Add(new ClassNullValueParser());
             _valueParsers.InsertRange(0, options.ValueParsers);
             _defaultLimit = options.DefaultLimit;
             _maxLimit = options.MaxLimit;

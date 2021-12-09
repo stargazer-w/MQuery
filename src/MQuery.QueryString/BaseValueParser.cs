@@ -17,8 +17,25 @@ namespace MQuery.QueryString
         {
             if(type == typeof(string))
                 return valueStr;
+
             var typeConverter = TypeDescriptor.GetConverter(type);
             return typeConverter.ConvertFromString(valueStr);
+        }
+    }
+
+    public class ClassNullValueParser : IValueParser
+    {
+        public bool CanParse(Type type)
+        {
+            return type.IsClass;
+        }
+
+        public object? Parse(string? valueStr, Type type)
+        {
+            if(valueStr == null)
+                return null;
+            else
+                throw new NotSupportedException($"Type {type} can not be convert from query");
         }
     }
 }
