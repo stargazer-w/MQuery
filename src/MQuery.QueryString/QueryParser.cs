@@ -32,25 +32,6 @@ namespace MQuery.QueryString
             _maxLimit = options.MaxLimit;
         }
 
-        private PropertyNode? ParseProperty(string key)
-        {
-            if(_includeProps?.Contains(key) == false)
-                return null;
-
-            var selectors = key.Split('.');
-            var type = typeof(T);
-            List<PropertyInfo> properties = new List<PropertyInfo>();
-            foreach(var s in selectors)
-            {
-                var p = type.GetProperty(s, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if(p is null)
-                    return null;
-                type = p.PropertyType;
-                properties.Add(p);
-            }
-            return new PropertyNode(properties.First(), properties.Skip(1).ToArray());
-        }
-
         public Query<T> Parse(string queryString)
         {
             if(queryString is null)
@@ -164,19 +145,38 @@ namespace MQuery.QueryString
             valueStrings = valueStrings.Where(it => it != null);
             var value = op switch
             {
-                CompareOperator.In or CompareOperator.Nin => ConvertFromString(type, valueStrings),
-                _ => ConvertFromString(type, valueStrings.First())
+                CompareOperator.In or CompareOperator.Nin => ParseValues(type, valueStrings),
+                _ => ParseValue(type, valueStrings.First())
             };
             return new CompareNode(op, value);
         }
 
-        private object ConvertFromString(Type type, IEnumerable<string> valueStrings)
+        private PropertyNode? ParseProperty(string key)
         {
-            var values = valueStrings.Select(it => ConvertFromString(type, it));
+            if(_includeProps?.Contains(key) == false)
+                return null;
+
+            var selectors = key.Split('.');
+            var type = typeof(T);
+            List<PropertyInfo> properties = new List<PropertyInfo>();
+            foreach(var s in selectors)
+            {
+                var p = type.GetProperty(s, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if(p is null)
+                    return null;
+                type = p.PropertyType;
+                properties.Add(p);
+            }
+            return new PropertyNode(properties.First(), properties.Skip(1).ToArray());
+        }
+
+        private object ParseValues(Type type, IEnumerable<string> valueStrings)
+        {
+            var values = valueStrings.Select(it => ParseValue(type, it));
             return typeof(Enumerable).GetMethod("Cast")!.MakeGenericMethod(type).Invoke(null, new[] { values })!;
         }
 
-        private object? ConvertFromString(Type type, string valueString)
+        private object? ParseValue(Type type, string valueString)
         {
             string? str = valueString;
             if(str.Length == 0)
@@ -192,7 +192,28 @@ namespace MQuery.QueryString
             }
             catch(Exception e)
             {
-                throw new InvalidOperationException($"Can not convert {str ?? "<Empty>"} to type {type.Name}", e);
+                throw new InvalidOperationException($"Can not parse {str ?? "<Empty>"} to type {type.Name}", e);
+            }
+        }
+
+        private string FriendlyTypeDisplay(Type type)
+        {
+            switch(type)
+            {
+                case null:
+                    throw new ArgumentNullException(nameof(type));
+                case { } when type == typeof(int):
+                    return "Integer32";
+                case { } when type == typeof(long):
+                    return "Integer64";
+                case { } when type == typeof(float):
+                    return "Float32";
+                case { } when type == typeof(double):
+                    return "Float64";
+                case { } when type.IsGenericParameter && type.GetGenericTypeDefinition() == typeof(Nullable<>):
+                    return FriendlyTypeDisplay(type.GetGenericArguments().First()) + "or Null";
+                default:
+                    return type.Name;
             }
         }
 
