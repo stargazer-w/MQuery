@@ -98,17 +98,14 @@ namespace MQuery.Expressions
                 _ => throw new ArgumentException("error compare operator", nameof(compareNode)),
             };
 
-            Expression val = Expression.Constant(compareNode.Value);
-            CastIfNullable(property.Type, ref val);
-            return op(property, val);
-        }
-
-        private static void CastIfNullable(Type type, ref Expression val)
-        {
-            if(Nullable.GetUnderlyingType(type) != null)
+            // 防止Nullable<T>装箱丢失类型，集合之外的操作都指定为属性的类型
+            // 集合的值在生成时就已经Cast为属性类型的集合
+            var val = compareNode.Operator switch
             {
-                val = Expression.Convert(val, type);
-            }
+                CompareOperator.In or CompareOperator.Nin => Expression.Constant(compareNode.Value),
+                _ => Expression.Constant(compareNode.Value, property.Type),
+            };
+            return op(property, val);
         }
     }
 }
