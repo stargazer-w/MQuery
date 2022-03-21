@@ -130,5 +130,31 @@ namespace MQuery.Expressions.Tests
 
             result.ShouldBe(source.Where(x => x.Foo.Age == 18));
         }
+
+        public class NullableValueProp
+        {
+            public int? Foo { get; set; }
+        }
+
+        [Test]
+        public void NullableValueCompare()
+        {
+            var source = new List<NullableValueProp>
+            {
+                new() { Foo = 0 },
+                new() { Foo = 1 },
+                new() { Foo = 2 },
+                new() { Foo = 3 },
+            };
+
+            var type = typeof(NullableValueProp);
+            var filter = new FilterDocument(type);
+            filter.AddPropertyCompare(new PropertyNode(type.GetProperty("Foo")!), new CompareNode(CompareOperator.Eq, 0));
+
+            var expr = filter.ToExpression();
+            var result = ((Expression<Func<IQueryable<NullableValueProp>, IQueryable<NullableValueProp>>>)expr).Compile()(source.AsQueryable());
+
+            result.ShouldBe(source.Where(x => x.Foo == 0));
+        }
     }
 }
