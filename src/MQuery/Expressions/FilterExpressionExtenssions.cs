@@ -61,17 +61,21 @@ namespace MQuery.Expressions
             {
                 var eleType = colType.GetGenericArguments().First();
                 var anyInfo = _anyInfo.MakeGenericMethod(eleType);
-                var param = Expression.Parameter(eleType, "ele");
+                var param = Expression.Parameter(eleType, "x");
                 var body = propertyComparesNode.Compares
                                                .Select(it => it.ToExpression(param))
                                                .Aggregate(Expression.And);
                 var predicate = Expression.Lambda(body, param);
+                // ele.arrProp.Any(x => x <op> val1 && x <op> val2 && ...)
                 return Expression.Call(anyInfo, propertySelector, predicate);
             }
-
-            return propertyComparesNode.Compares
-                                       .Select(it => it.ToExpression(propertySelector))
-                                       .Aggregate(Expression.And);
+            else
+            {
+                // ele.prop <op> val1 && ele.prop <op> val2 && ...
+                return propertyComparesNode.Compares
+                                           .Select(it => it.ToExpression(propertySelector))
+                                           .Aggregate(Expression.And);
+            }
         }
 
         /// <summary>
