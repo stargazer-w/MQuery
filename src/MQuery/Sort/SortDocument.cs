@@ -8,7 +8,7 @@ namespace MQuery.Sort
 {
     public class SortDocument
     {
-        private readonly List<SortByPropertyNode> _sortByProperties = new List<SortByPropertyNode>();
+        private readonly List<SortByPropertyNode> _sortByProperties = new();
 
         public Type ElementType { get; }
 

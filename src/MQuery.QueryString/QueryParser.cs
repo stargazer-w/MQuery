@@ -39,7 +39,7 @@ namespace MQuery.QueryString
                 throw new ArgumentNullException(nameof(queryString));
 
             if(queryString.StartsWith("?"))
-                queryString = queryString[1..];
+                queryString = queryString.Substring(1);
 
             var query = new Query<T>();
             var parameters = StructureQueryString(queryString);
@@ -159,7 +159,7 @@ namespace MQuery.QueryString
 
             var selectors = key.Split('.');
             var type = typeof(T);
-            List<PropertyInfo> properties = new List<PropertyInfo>();
+            List<PropertyInfo> properties = new();
             foreach(var s in selectors)
             {
                 var p = type.GetProperty(s, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
@@ -199,23 +199,16 @@ namespace MQuery.QueryString
 
         private string FriendlyTypeDisplay(Type type)
         {
-            switch(type)
+            return type switch
             {
-                case null:
-                    throw new ArgumentNullException(nameof(type));
-                case { } when type == typeof(int):
-                    return "Integer32";
-                case { } when type == typeof(long):
-                    return "Integer64";
-                case { } when type == typeof(float):
-                    return "Float32";
-                case { } when type == typeof(double):
-                    return "Float64";
-                case { } when type.IsGenericParameter && type.GetGenericTypeDefinition() == typeof(Nullable<>):
-                    return FriendlyTypeDisplay(type.GetGenericArguments().First()) + "or Null";
-                default:
-                    return type.Name;
-            }
+                null => throw new ArgumentNullException(nameof(type)),
+                { } when type == typeof(int) => "Integer32",
+                { } when type == typeof(long) => "Integer64",
+                { } when type == typeof(float) => "Float32",
+                { } when type == typeof(double) => "Float64",
+                { } when type.IsGenericParameter && type.GetGenericTypeDefinition() == typeof(Nullable<>) => FriendlyTypeDisplay(type.GetGenericArguments().First()) + "or Null",
+                _ => type.Name,
+            };
         }
 
         public static IDictionary<string, string[]> StructureQueryString(string queryString)
