@@ -144,12 +144,13 @@ namespace MQuery.QueryString
         private CompareNode CreateCompareNode(Type type, CompareOperator op, IEnumerable<string> valueStrings)
         {
             valueStrings = valueStrings.Where(it => it != null);
-            var value = op switch
+            var (value, valueType) = op switch
             {
-                CompareOperator.In or CompareOperator.Nin => ParseValues(type, valueStrings),
-                _ => ParseValue(type, valueStrings.First())
+                CompareOperator.In or CompareOperator.Nin => (ParseValues(type, valueStrings), typeof(IEnumerable<>).MakeGenericType(type)),
+                _ => (ParseValue(type, valueStrings.First()), type),
             };
-            return new CompareNode(op, value);
+
+            return (CompareNode)Activator.CreateInstance(typeof(CompareNode<>).MakeGenericType(valueType), op, value);
         }
 
         private PropertyNode? ParseProperty(string key)
