@@ -102,13 +102,7 @@ namespace MQuery.Expressions
                 _ => throw new ArgumentException("error compare operator", nameof(compareNode)),
             };
 
-            // 防止Nullable<T>装箱丢失类型，集合之外的操作都指定为属性的类型
-            // 集合的值在生成时就已经Cast为属性类型的集合
-            var val = compareNode.Operator switch
-            {
-                CompareOperator.In or CompareOperator.Nin => Expression.Constant(compareNode.Value),
-                _ => Expression.Constant(compareNode.Value, property.Type),
-            };
+            var val = Expression.Constant(compareNode.Value, compareNode.GetType().GetGenericArguments()[0]);
             return op(property, val);
         }
     }

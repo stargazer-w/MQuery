@@ -1,15 +1,26 @@
 ﻿namespace MQuery.Filter
 {
-    public record CompareNode
+    public abstract record CompareNode
     {
         public CompareOperator Operator { get; }
 
-        public object? Value { get; }
+        public abstract object? Value { get; }
 
-        public CompareNode(CompareOperator @operator, object? value)
+        public CompareNode(CompareOperator @operator)
         {
             Operator = @operator;
-            Value = value;
+        }
+    }
+
+    public record CompareNode<T> : CompareNode
+    {
+        private T _value;
+
+        public override object? Value => _value;
+
+        public CompareNode(CompareOperator @operator, T value) : base(@operator)
+        {
+            _value = value;
         }
     }
 }

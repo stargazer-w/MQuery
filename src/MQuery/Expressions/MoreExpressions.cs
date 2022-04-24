@@ -15,7 +15,7 @@ namespace MQuery.Expressions
                 throw new ArgumentNullException(nameof(right));
 
             var leftEnmType = typeof(IEnumerable<>).MakeGenericType(left.Type);
-            if(!right.Type.GetInterfaces().Contains(leftEnmType))
+            if(right.Type != leftEnmType && !right.Type.GetInterfaces().Contains(leftEnmType))
                 throw new ArgumentException("Right expression type must implement IEnumerable of left's type");
 
             var containsInfo = typeof(Enumerable).GetMethods()

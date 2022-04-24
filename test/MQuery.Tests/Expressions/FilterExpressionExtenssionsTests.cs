@@ -123,7 +123,7 @@ namespace MQuery.Expressions.Tests
             var barType = typeof(Bar);
             var fooType = typeof(Foo);
             var filter = new FilterDocument(barType);
-            filter.AddPropertyCompare(new PropertyNode(barType.GetProperty("Foo")!, fooType.GetProperty("Age")!), new CompareNode(CompareOperator.Eq, 18));
+            filter.AddPropertyCompare(new PropertyNode(barType.GetProperty("Foo")!, fooType.GetProperty("Age")!), new CompareNode<int>(CompareOperator.Eq, 18));
 
             var expr = filter.ToExpression();
             var result = ((Expression<Func<IQueryable<Bar>, IQueryable<Bar>>>)expr).Compile()(source.AsQueryable());
@@ -149,7 +149,7 @@ namespace MQuery.Expressions.Tests
 
             var type = typeof(NullableValueProp);
             var filter = new FilterDocument(type);
-            filter.AddPropertyCompare(new PropertyNode(type.GetProperty("Foo")!), new CompareNode(CompareOperator.Eq, 0));
+            filter.AddPropertyCompare(new PropertyNode(type.GetProperty("Foo")!), new CompareNode<int?>(CompareOperator.Eq, 0));
 
             var expr = filter.ToExpression();
             var result = ((Expression<Func<IQueryable<NullableValueProp>, IQueryable<NullableValueProp>>>)expr).Compile()(source.AsQueryable());
