@@ -6,9 +6,9 @@ namespace MQuery.QueryString
 {
     public class ParseException : Exception
     {
-        public string? Key { get; init; }
+        public string? Key { get; set; }
 
-        public IEnumerable<string> Values { get; init; } = Enumerable.Empty<string>();
+        public IEnumerable<string> Values { get; set; } = Enumerable.Empty<string>();
 
         public ParseException()
         {
