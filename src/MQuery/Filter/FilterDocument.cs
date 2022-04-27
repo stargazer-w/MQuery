@@ -20,7 +20,7 @@ namespace MQuery.Filter
             ElementType = eleType;
         }
 
-        public void AddPropertyCompare(PropertyNode property, CompareNode compare, params CompareNode[] otherCompares)
+        public void AddPropertyCompare(PropertyNode property, ICompareNode compare, params ICompareNode[] otherCompares)
         {
             if(property is null)
                 throw new ArgumentNullException(nameof(property));

@@ -119,7 +119,7 @@ namespace MQuery.QueryString
             if(!Enum.TryParse<CompareOperator>(opString, true, out var op))
                 return true;
 
-            CompareNode compareNode;
+            ICompareNode compareNode;
             try
             {
                 if(prop.PropertyType.GetInterface("ICollection`1") is { } colType)
@@ -141,7 +141,7 @@ namespace MQuery.QueryString
             return true;
         }
 
-        private CompareNode CreateCompareNode(Type type, CompareOperator op, IEnumerable<string> valueStrings)
+        private ICompareNode CreateCompareNode(Type type, CompareOperator op, IEnumerable<string> valueStrings)
         {
             valueStrings = valueStrings.Where(it => it != null);
             var (value, valueType) = op switch
@@ -150,7 +150,7 @@ namespace MQuery.QueryString
                 _ => (ParseValue(type, valueStrings.First()), type),
             };
 
-            return (CompareNode)Activator.CreateInstance(typeof(CompareNode<>).MakeGenericType(valueType), op, value);
+            return (ICompareNode)Activator.CreateInstance(typeof(CompareNode<>).MakeGenericType(valueType), op, value);
         }
 
         private PropertyNode? ParseProperty(string key)

@@ -9,13 +9,13 @@ namespace MQuery.Filter
 {
     public class PropertyComparesNode
     {
-        private readonly List<CompareNode> _compares;
+        private readonly List<ICompareNode> _compares;
 
         public PropertyNode Property{ get; }
 
-        public IEnumerable<CompareNode> Compares => _compares.AsReadOnly();
+        public IEnumerable<ICompareNode> Compares => _compares.AsReadOnly();
 
-        public PropertyComparesNode(PropertyNode property, CompareNode compare, params CompareNode[] otherCompares)
+        public PropertyComparesNode(PropertyNode property, ICompareNode compare, params ICompareNode[] otherCompares)
         {
             if(otherCompares is null)
                 throw new ArgumentNullException(nameof(otherCompares));
@@ -23,7 +23,7 @@ namespace MQuery.Filter
             _compares = otherCompares.Prepend(compare).ToList();
         }
 
-        public void AddCompare(CompareNode compareNode)
+        public void AddCompare(ICompareNode compareNode)
         {
             _compares.Add(compareNode);
         }
