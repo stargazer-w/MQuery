@@ -84,7 +84,7 @@ namespace MQuery.Expressions
         /// <param name="compareNode"></param>
         /// <param name="property">需要比较的属性表达式</param>
         /// <returns>比较表达式</returns>
-        public static Expression ToExpression(this CompareNode compareNode, Expression property)
+        public static Expression ToExpression(this ICompareNode compareNode, Expression property)
         {
             if(property is null)
                 throw new ArgumentNullException(nameof(property));
@@ -102,7 +102,7 @@ namespace MQuery.Expressions
                 _ => throw new ArgumentException("error compare operator", nameof(compareNode)),
             };
 
-            var val = Expression.Constant(compareNode.Value, compareNode.GetType().GetGenericArguments()[0]);
+            var val = Expression.Constant(compareNode.Value, compareNode.ValueType);
             return op(property, val);
         }
     }
