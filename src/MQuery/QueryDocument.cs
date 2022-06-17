@@ -8,7 +8,7 @@ namespace MQuery
     {
         public FilterDocument Filter { get; } = new(typeof(T));
 
-        public SortDocument Sort { get; } = new(typeof(T));
+        public SortDocument<T> Sort { get; } = new();
 
         public SlicingDocument Slicing { get; } = new();
     }

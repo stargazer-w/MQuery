@@ -35,7 +35,7 @@ namespace MQuery.Expressions.Tests
             var ageProp = typeof(Foo).GetProperty("Age");
             query.Filter.AddPropertyCompare(ageProp, CompareOperator.Gt, 18);
             query.Filter.AddPropertyCompare(ageProp, CompareOperator.Lte, 40);
-            query.Sort.AddSortByProperty(new(ageProp), SortPattern.Desc);
+            query.Sort.AddSortByProperty(x => x.Age, SortPattern.Desc);
             query.Slicing.Skip = 1;
             query.Slicing.Limit = 2;
 
