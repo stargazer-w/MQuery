@@ -7,12 +7,12 @@ namespace MQuery.Sort
     {
         public LambdaExpression PropertySelector { get; }
 
-        public SortPattern Type { get; }
+        public SortPattern Pattern { get; }
 
         public SortByPropertyNode(LambdaExpression selector, SortPattern pattern)
         {
             PropertySelector = selector ?? throw new ArgumentNullException(nameof(selector));
-            Type = pattern;
+            Pattern = pattern;
         }
     }
 }

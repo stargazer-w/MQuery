@@ -1,7 +1,5 @@
 ﻿using MQuery.Expressions;
-using System;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace MQuery
 {
@@ -16,13 +14,13 @@ namespace MQuery
 
         public IQueryable<T> ApplyTo(IQueryable<T> qy)
         {
-            var expr = (Expression<Func<IQueryable<T>, IQueryable<T>>>)Document.ToExpression();
+            var expr = Document.ToExpression();
             return expr.Compile()(qy);
         }
 
         public IQueryable<T> FilterTo(IQueryable<T> qy)
         {
-            var expr = (Expression<Func<IQueryable<T>, IQueryable<T>>>)Document.Filter.ToExpression();
+            var expr = Document.Filter.ToExpression();
             return expr.Compile()(qy);
         }
 
@@ -33,7 +31,7 @@ namespace MQuery
         }
         public IQueryable<T> SliceTo(IQueryable<T> qy)
         {
-            var expr = Document.Slicing.ToExpression<T>();
+            var expr = Document.Slice.ToExpression<T>();
             return expr.Compile()(qy);
         }
     }

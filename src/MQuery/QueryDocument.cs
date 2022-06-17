@@ -1,5 +1,5 @@
 ﻿using MQuery.Filter;
-using MQuery.Slicing;
+using MQuery.Slice;
 using MQuery.Sort;
 
 namespace MQuery
@@ -10,6 +10,6 @@ namespace MQuery
 
         public SortDocument<T> Sort { get; } = new();
 
-        public SlicingDocument Slicing { get; } = new();
+        public SliceDocument Slice { get; } = new();
     }
 }
