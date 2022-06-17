@@ -1,33 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace MQuery.Sort
 {
-    public class SortDocument
+    public class SortDocument<T>
     {
         private readonly List<SortByPropertyNode> _sortByProperties = new();
 
-        public Type ElementType { get; }
-
         public IEnumerable<SortByPropertyNode> SortByPropertyNodes => _sortByProperties.AsReadOnly();
 
-        public SortDocument(Type elementType)
-        {
-            ElementType = elementType;
-        }
-
-        public void AddSortByProperty(PropertyNode propertyNode, SortPattern sortType)
+        public void AddSortByProperty<TProp>(Expression<Func<T, TProp>> propertyNode, SortPattern sortType, int order = int.MaxValue)
         {
             if(propertyNode is null)
                 throw new ArgumentNullException(nameof(propertyNode));
 
-            var oldSort = _sortByProperties.FirstOrDefault(it => it.Property.Equals(propertyNode));
-            if(oldSort != null)
-                _sortByProperties.Remove(oldSort);
-            _sortByProperties.Add(new SortByPropertyNode(propertyNode, sortType));
+            order = order switch
+            {
+                < 0 => 0,
+                _ when order > _sortByProperties.Count => _sortByProperties.Count,
+                _ => order,
+            };
+
+            _sortByProperties.Insert(order, new SortByPropertyNode(propertyNode, sortType));
         }
     }
 }

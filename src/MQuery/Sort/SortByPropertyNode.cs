@@ -1,21 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace MQuery.Sort
 {
     public class SortByPropertyNode
     {
-        public PropertyNode Property { get; }
+        public LambdaExpression PropertySelector { get; }
 
         public SortPattern Type { get; }
 
-        public SortByPropertyNode(PropertyNode property, SortPattern pattern)
+        public SortByPropertyNode(LambdaExpression selector, SortPattern pattern)
         {
-            Property = property ?? throw new ArgumentNullException(nameof(property));
+            PropertySelector = selector ?? throw new ArgumentNullException(nameof(selector));
             Type = pattern;
         }
     }

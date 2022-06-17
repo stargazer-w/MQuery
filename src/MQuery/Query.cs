@@ -28,7 +28,7 @@ namespace MQuery
 
         public IQueryable<T> SortTo(IQueryable<T> qy)
         {
-            var expr = (Expression<Func<IQueryable<T>, IQueryable<T>>>)Document.Sort.ToExpression();
+            var expr = Document.Sort.ToExpression();
             return expr.Compile()(qy);
         }
         public IQueryable<T> SliceTo(IQueryable<T> qy)
