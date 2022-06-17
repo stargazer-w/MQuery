@@ -1,31 +1,38 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace MQuery.Filter
 {
-    public class PropertyComparesNode
+    public interface IPropertyComparesNode
     {
-        private readonly List<ICompareNode> _compares;
+        CompareOperator Operator { get; }
+        LambdaExpression PropertySelector { get; }
+        object? Value { get; }
+        Type Type { get; }
+    }
 
-        public PropertyNode Property{ get; }
+    public class PropertyComparesNode<TValue> : IPropertyComparesNode
+    {
+        public LambdaExpression PropertySelector { get; }
 
-        public IEnumerable<ICompareNode> Compares => _compares.AsReadOnly();
+        public CompareOperator Operator { get; }
 
-        public PropertyComparesNode(PropertyNode property, ICompareNode compare, params ICompareNode[] otherCompares)
+        public TValue Value { get; }
+
+        object? IPropertyComparesNode.Value => Value;
+
+        Type IPropertyComparesNode.Type => typeof(TValue);
+
+        public PropertyComparesNode(LambdaExpression selector, CompareOperator @operator, TValue value)
         {
-            if(otherCompares is null)
-                throw new ArgumentNullException(nameof(otherCompares));
-            Property = property ?? throw new ArgumentNullException(nameof(property));
-            _compares = otherCompares.Prepend(compare).ToList();
-        }
+            if(selector is null)
+            {
+                throw new ArgumentNullException(nameof(selector));
+            }
 
-        public void AddCompare(ICompareNode compareNode)
-        {
-            _compares.Add(compareNode);
+            PropertySelector = selector;
+            Operator = @operator;
+            Value = value;
         }
     }
 }

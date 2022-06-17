@@ -32,9 +32,8 @@ namespace MQuery.Expressions.Tests
                 new Foo { Name = "Frank", Age = 15 },
             };
             var query = new QueryDocument<Foo>();
-            var ageProp = typeof(Foo).GetProperty("Age");
-            query.Filter.AddPropertyCompare(ageProp, CompareOperator.Gt, 18);
-            query.Filter.AddPropertyCompare(ageProp, CompareOperator.Lte, 40);
+            query.Filter.AddPropertyCompare(x => x.Age, CompareOperator.Gt, 18);
+            query.Filter.AddPropertyCompare(x => x.Age, CompareOperator.Lte, 40);
             query.Sort.AddSortByProperty(x => x.Age, SortPattern.Desc);
             query.Slicing.Skip = 1;
             query.Slicing.Limit = 2;

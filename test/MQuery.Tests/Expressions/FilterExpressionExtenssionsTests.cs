@@ -1,13 +1,9 @@
-﻿using NUnit.Framework;
-using MQuery.Expressions;
+﻿using MQuery.Filter;
+using NUnit.Framework;
+using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Linq.Expressions;
-using Shouldly;
-using MQuery.Filter;
 
 namespace MQuery.Expressions.Tests
 {
@@ -26,11 +22,11 @@ namespace MQuery.Expressions.Tests
         {
             var source = new List<Foo> { new Foo { Name = "Alice", Age = 18 }, new Foo { Name = "Bob", Age = 20 } };
             var type = typeof(Foo);
-            var filter = new FilterDocument(type);
-            filter.AddPropertyCompare(type.GetProperty("Age"), CompareOperator.Gt, 18);
+            var filter = new FilterDocument<Foo>();
+            filter.AddPropertyCompare(x => x.Age, CompareOperator.Gt, 18);
 
             var expr = filter.ToExpression();
-            var result = ((Expression<Func<IQueryable<Foo>, IQueryable<Foo>>>)expr).Compile()(source.AsQueryable());
+            var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source.Where(it => it.Age > 18));
         }
@@ -40,11 +36,11 @@ namespace MQuery.Expressions.Tests
         {
             var source = new List<Foo> { new Foo { Name = "Alice", Age = 18 }, new Foo { Name = "Bob", Age = 20 } };
             var type = typeof(Foo);
-            var filter = new FilterDocument(type);
-            filter.AddPropertyCompare(type.GetProperty("Age"), CompareOperator.In, new[] { 18 });
+            var filter = new FilterDocument<Foo>();
+            filter.AddPropertyCompare(x => x.Age, CompareOperator.In, new[] { 18 });
 
             var expr = filter.ToExpression();
-            var result = ((Expression<Func<IQueryable<Foo>, IQueryable<Foo>>>)expr).Compile()(source.AsQueryable());
+            var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source.Where(it => new[] { 18 }.Contains(it.Age)));
         }
@@ -54,11 +50,11 @@ namespace MQuery.Expressions.Tests
         {
             var source = new List<Foo> { new Foo { Name = "Alice", Age = 18 }, new Foo { Name = "Bob", Age = 20 } };
             var type = typeof(Foo);
-            var filter = new FilterDocument(type);
-            filter.AddPropertyCompare(type.GetProperty("Age"), CompareOperator.Eq, 18);
+            var filter = new FilterDocument<Foo>();
+            filter.AddPropertyCompare(x => x.Age, CompareOperator.Eq, 18);
 
             var expr = filter.ToExpression();
-            var result = ((Expression<Func<IQueryable<Foo>, IQueryable<Foo>>>)expr).Compile()(source.AsQueryable());
+            var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source.Where(it => it.Age == 18));
         }
@@ -68,11 +64,11 @@ namespace MQuery.Expressions.Tests
         {
             var source = new List<Foo> { new Foo { Name = "Alice", Age = 18 }, new Foo { Name = "Bob", Age = 20 } };
             var type = typeof(Foo);
-            var filter = new FilterDocument(type);
-            filter.AddPropertyCompare(type.GetProperty("Age"), CompareOperator.Nin, new[] { 18 });
+            var filter = new FilterDocument<Foo>();
+            filter.AddPropertyCompare(x => x.Age, CompareOperator.Nin, new[] { 18 });
 
             var expr = filter.ToExpression();
-            var result = ((Expression<Func<IQueryable<Foo>, IQueryable<Foo>>>)expr).Compile()(source.AsQueryable());
+            var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source.Where(it => !new[] { 18 }.Contains(it.Age)));
         }
@@ -82,13 +78,12 @@ namespace MQuery.Expressions.Tests
         {
             var source = new List<Foo> { new Foo { Name = "Alice", Age = 18 }, new Foo { Name = "Bob", Age = 20 } };
             var type = typeof(Foo);
-            var filter = new FilterDocument(type);
-            var ageProp = type.GetProperty("Age");
-            filter.AddPropertyCompare(ageProp, CompareOperator.Gte, 18);
-            filter.AddPropertyCompare(ageProp, CompareOperator.Lte, 30);
+            var filter = new FilterDocument<Foo>();
+            filter.AddPropertyCompare(x => x.Age, CompareOperator.Gte, 18);
+            filter.AddPropertyCompare(x => x.Age, CompareOperator.Lte, 30);
 
             var expr = filter.ToExpression();
-            var result = ((Expression<Func<IQueryable<Foo>, IQueryable<Foo>>>)expr).Compile()(source.AsQueryable());
+            var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source.Where(it => it.Age is >= 18 and <= 30));
         }
@@ -98,10 +93,10 @@ namespace MQuery.Expressions.Tests
         {
             var source = new List<Foo> { new Foo { Name = "Alice", Age = 18 }, new Foo { Name = "Bob", Age = 30 }, new Foo { Name = "Carl", Age = 50 } };
             var type = typeof(Foo);
-            var filter = new FilterDocument(type);
+            var filter = new FilterDocument<Foo>();
 
             var expr = filter.ToExpression();
-            var result = ((Expression<Func<IQueryable<Foo>, IQueryable<Foo>>>)expr).Compile()(source.AsQueryable());
+            var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source);
         }
@@ -122,11 +117,11 @@ namespace MQuery.Expressions.Tests
             };
             var barType = typeof(Bar);
             var fooType = typeof(Foo);
-            var filter = new FilterDocument(barType);
-            filter.AddPropertyCompare(new PropertyNode(barType.GetProperty("Foo")!, fooType.GetProperty("Age")!), new CompareNode<int>(CompareOperator.Eq, 18));
+            var filter = new FilterDocument<Bar>();
+            filter.AddPropertyCompare(x => x.Foo.Age, CompareOperator.Eq, 18);
 
             var expr = filter.ToExpression();
-            var result = ((Expression<Func<IQueryable<Bar>, IQueryable<Bar>>>)expr).Compile()(source.AsQueryable());
+            var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source.Where(x => x.Foo.Age == 18));
         }
@@ -148,11 +143,11 @@ namespace MQuery.Expressions.Tests
             };
 
             var type = typeof(NullableValueProp);
-            var filter = new FilterDocument(type);
-            filter.AddPropertyCompare(new PropertyNode(type.GetProperty("Foo")!), new CompareNode<int?>(CompareOperator.Eq, 0));
+            var filter = new FilterDocument<NullableValueProp>();
+            filter.AddPropertyCompare(x => x.Foo, CompareOperator.Eq,(int?) 0);
 
             var expr = filter.ToExpression();
-            var result = ((Expression<Func<IQueryable<NullableValueProp>, IQueryable<NullableValueProp>>>)expr).Compile()(source.AsQueryable());
+            var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source.Where(x => x.Foo == 0));
         }
