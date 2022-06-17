@@ -10,10 +10,10 @@ namespace MQuery.Sort
 
         public IEnumerable<SortByPropertyNode> SortByPropertyNodes => _sortByProperties.AsReadOnly();
 
-        public void AddSortByProperty<TProp>(Expression<Func<T, TProp>> propertyNode, SortPattern sortType, int order = int.MaxValue)
+        public void AddSortByProperty<TProp>(Expression<Func<T, TProp>> selector, SortPattern pattern, int order = int.MaxValue)
         {
-            if(propertyNode is null)
-                throw new ArgumentNullException(nameof(propertyNode));
+            if(selector is null)
+                throw new ArgumentNullException(nameof(selector));
 
             order = order switch
             {
@@ -22,7 +22,7 @@ namespace MQuery.Sort
                 _ => order,
             };
 
-            _sortByProperties.Insert(order, new SortByPropertyNode(propertyNode, sortType));
+            _sortByProperties.Insert(order, new (selector, pattern));
         }
     }
 }

@@ -1,13 +1,13 @@
-﻿using MQuery.Slicing;
+﻿using MQuery.Slice;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
 
 namespace MQuery.Expressions
 {
-    public static class SlicingExpressionExtessions
+    public static class SliceExpressionExtensions
     {
-        public static Expression<Func<IQueryable<T>, IQueryable<T>>> ToExpression<T>(this SlicingDocument slicing)
+        public static Expression<Func<IQueryable<T>, IQueryable<T>>> ToExpression<T>(this SliceDocument slicing)
         {
             return slicing switch
             {

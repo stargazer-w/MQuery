@@ -10,7 +10,7 @@ using System.Linq.Expressions;
 namespace MQuery.Expressions.Tests
 {
     [TestFixture()]
-    public class QueryExpressionExtenssionsTests
+    public class QueryExpressionExtensionsTests
     {
         public class Foo
         {
@@ -35,8 +35,8 @@ namespace MQuery.Expressions.Tests
             query.Filter.AddPropertyCompare(x => x.Age, CompareOperator.Gt, 18);
             query.Filter.AddPropertyCompare(x => x.Age, CompareOperator.Lte, 40);
             query.Sort.AddSortByProperty(x => x.Age, SortPattern.Desc);
-            query.Slicing.Skip = 1;
-            query.Slicing.Limit = 2;
+            query.Slice.Skip = 1;
+            query.Slice.Limit = 2;
 
             var expr = query.ToExpression();
             var result = ((Expression<Func<IQueryable<Foo>, IQueryable<Foo>>>)expr).Compile()(source.AsQueryable());

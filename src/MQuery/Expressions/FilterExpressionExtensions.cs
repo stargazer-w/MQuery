@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace MQuery.Expressions
 {
-    public static class FilterExpressionExtenssions
+    public static class FilterExpressionExtensions
     {
         private static readonly MethodInfo _whereInfo = typeof(Queryable).GetMethods().First(m => m.ToString() == "System.Linq.IQueryable`1[TSource] Where[TSource](System.Linq.IQueryable`1[TSource], System.Linq.Expressions.Expression`1[System.Func`2[TSource,System.Boolean]])");
         private static readonly MethodInfo _anyInfo = typeof(Enumerable).GetMethods().First(m => m.ToString() == "Boolean Any[TSource](System.Collections.Generic.IEnumerable`1[TSource], System.Func`2[TSource,System.Boolean])");

@@ -8,7 +8,7 @@ using System.Linq;
 namespace MQuery.Expressions.Tests
 {
     [TestFixture()]
-    public class FilterExpressionExtenssionsTests
+    public class FilterExpressionExtensionsTests
     {
         public class Foo
         {

@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace MQuery.Expressions
 {
-    public static class SortExpressionExtenssions
+    public static class SortExpressionExtensions
     {
         private static readonly MethodInfo _orderByInfo = typeof(Queryable).GetMethods().First(m => m.ToString() == "System.Linq.IOrderedQueryable`1[TSource] OrderBy[TSource,TKey](System.Linq.IQueryable`1[TSource], System.Linq.Expressions.Expression`1[System.Func`2[TSource,TKey]])");
         private static readonly MethodInfo _orderByDescInfo = typeof(Queryable).GetMethods().First(m => m.ToString() == "System.Linq.IOrderedQueryable`1[TSource] OrderByDescending[TSource,TKey](System.Linq.IQueryable`1[TSource], System.Linq.Expressions.Expression`1[System.Func`2[TSource,TKey]])");
@@ -30,7 +30,7 @@ namespace MQuery.Expressions
         public static Expression ToExpression(this SortByPropertyNode sortByPropertyNode, Expression target, Type elementType)
         {
             var prop = sortByPropertyNode.PropertySelector;
-            var orderInfo = (sortByPropertyNode.Type == SortPattern.Acs ? _orderByInfo : _orderByDescInfo)
+            var orderInfo = (sortByPropertyNode.Pattern == SortPattern.Acs ? _orderByInfo : _orderByDescInfo)
                                 .MakeGenericMethod(elementType, prop.ReturnType);
             return Expression.Call(orderInfo, target, prop);
         }

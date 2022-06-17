@@ -1,6 +1,6 @@
-﻿namespace MQuery.Slicing
+﻿namespace MQuery.Slice
 {
-    public class SlicingDocument
+    public class SliceDocument
     {
         public int? Skip { get; set; }
 
