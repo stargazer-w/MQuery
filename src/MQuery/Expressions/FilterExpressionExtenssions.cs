@@ -1,8 +1,8 @@
-﻿using System;
+﻿using MQuery.Filter;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using MQuery.Filter;
 
 namespace MQuery.Expressions
 {
@@ -16,80 +16,76 @@ namespace MQuery.Expressions
         /// </summary>
         /// <param name="filter"></param>
         /// <returns>对 IQueryable 进行筛选的表达式</returns>
-        public static LambdaExpression ToExpression(this FilterDocument filter)
+        public static Expression<Func<IQueryable<T>, IQueryable<T>>> ToExpression<T>(this FilterDocument<T> filter)
         {
             if(filter is null)
                 throw new ArgumentNullException(nameof(filter));
 
-            var qyParam = Expression.Parameter(typeof(IQueryable<>).MakeGenericType(filter.ElementType), "qy");
-            // 空筛选不做任何处理
-            if(!filter.PropertyCompares.Any())
-                return Expression.Lambda(qyParam, qyParam);
+            Expression<Func<IQueryable<T>, IQueryable<T>>> noop = qy => qy;
 
-            var whereInfo = _whereInfo.MakeGenericMethod(filter.ElementType); // REVIEW: 可能的性能问题
-            var predicate = BuildPredicate(filter);
-            var body = Expression.Call(whereInfo, qyParam, predicate);
-            return Expression.Lambda(body, qyParam);
+            var whereInfo = _whereInfo.MakeGenericMethod(typeof(T));
+            var body = noop.Body;
+            foreach(var propCompare in filter.PropertyCompares)
+            {
+                var predicate = BuildWherePredicate<T>(propCompare);
+                body = Expression.Call(whereInfo, body, predicate);
+            }
+
+            return Expression.Lambda<Func<IQueryable<T>, IQueryable<T>>>(body, noop.Parameters);
         }
 
-        private static LambdaExpression BuildPredicate(FilterDocument filter)
-        {
-            var eleType = filter.ElementType;
-            var param = Expression.Parameter(eleType, "ele");
-            var filterExpr = filter.PropertyCompares
-                                   .Select(it => it.ToExpression(param))
-                                   .Aggregate(Expression.And);
-            return Expression.Lambda(filterExpr, param);
-        }
-
-        /// <summary>
-        /// 将属性比较节点组合为每个比较的&&聚合
-        /// </summary>
-        /// <param name="propertyComparesNode"></param>
-        /// <param name="target">属性的目标</param>
-        /// <returns>以&&聚合的比较表达式</returns>
-        public static Expression ToExpression(this PropertyComparesNode propertyComparesNode, Expression target)
+        public static Expression<Func<T, bool>> BuildWherePredicate<T>(IPropertyComparesNode propertyComparesNode)
         {
             if(propertyComparesNode is null)
-                throw new ArgumentNullException(nameof(propertyComparesNode));
-            if(target is null)
-                throw new ArgumentNullException(nameof(target));
-
-            var type = propertyComparesNode.Property.PropertyType;
-            var propertySelector = propertyComparesNode.Property.ToExpression(target);
-            if(type.GetInterface("ICollection`1") is { } colType)
             {
-                var eleType = colType.GetGenericArguments().First();
-                var anyInfo = _anyInfo.MakeGenericMethod(eleType);
-                var param = Expression.Parameter(eleType, "x");
-                var body = propertyComparesNode.Compares
-                                               .Select(it => it.ToExpression(param))
-                                               .Aggregate(Expression.And);
-                var predicate = Expression.Lambda(body, param);
-                // ele.arrProp.Any(x => x <op> val1 && x <op> val2 && ...)
-                return Expression.Call(anyInfo, propertySelector, predicate);
+                throw new ArgumentNullException(nameof(propertyComparesNode));
+            }
+
+            var selector = propertyComparesNode.PropertySelector;
+            if(selector.ReturnType.GetInterface("ICollection`1") is not null)
+            {
+                // x => x.Prop.Any(x => x <op> value)
+                var body = BuildAnyCompareBody(
+                    selector.Body,
+                    propertyComparesNode.Operator,
+                    propertyComparesNode.Value,
+                    propertyComparesNode.Type
+                );
+
+                return Expression.Lambda<Func<T, bool>>(body, selector.Parameters);
             }
             else
             {
-                // ele.prop <op> val1 && ele.prop <op> val2 && ...
-                return propertyComparesNode.Compares
-                                           .Select(it => it.ToExpression(propertySelector))
-                                           .Aggregate(Expression.And);
+                // x => x.Prop <op> value
+                var body = BuildCompareBody(
+                    selector.Body,
+                    propertyComparesNode.Operator,
+                    propertyComparesNode.Value,
+                    propertyComparesNode.Type
+                );
+
+                return Expression.Lambda<Func<T, bool>>(body, selector.Parameters);
             }
         }
 
-        /// <summary>
-        /// 将比较节点根据比较操作类型将属性与值组合为比较表达式
-        /// </summary>
-        /// <param name="compareNode"></param>
-        /// <param name="property">需要比较的属性表达式</param>
-        /// <returns>比较表达式</returns>
-        public static Expression ToExpression(this ICompareNode compareNode, Expression property)
+        private static Expression BuildAnyCompareBody<TValue>(Expression left, CompareOperator @operator, TValue rightValue, Type valueType)
         {
-            if(property is null)
-                throw new ArgumentNullException(nameof(property));
+            var eleType = left.Type.GetInterface("ICollection`1").GenericTypeArguments[0];
+            var anyInfo = _anyInfo.MakeGenericMethod(eleType);
+            var predicate = BuildAnyPredicate(eleType, @operator, rightValue, valueType);
+            return Expression.Call(anyInfo, left, predicate);
+        }
 
-            Func<Expression, Expression, Expression> op = compareNode.Operator switch
+        private static LambdaExpression BuildAnyPredicate<TValue>(Type eleType, CompareOperator @operator, TValue rightValue, Type valueType)
+        {
+            var param = Expression.Parameter(eleType, "x");
+            var body = BuildCompareBody(param, @operator, rightValue, valueType);
+            return Expression.Lambda(body, param);
+        }
+
+        private static Expression BuildCompareBody(Expression left, CompareOperator @operator, object? rightValue, Type valueType)
+        {
+            Func<Expression, Expression, Expression> op = @operator switch
             {
                 CompareOperator.Eq => Expression.Equal,
                 CompareOperator.Gt => Expression.GreaterThan,
@@ -99,11 +95,11 @@ namespace MQuery.Expressions
                 CompareOperator.Lte => Expression.LessThanOrEqual,
                 CompareOperator.Ne => Expression.NotEqual,
                 CompareOperator.Nin => (left, right) => Expression.Not(MoreExpressions.In(left, right)),
-                _ => throw new ArgumentException("error compare operator", nameof(compareNode)),
+                _ => throw new ArgumentOutOfRangeException("error operator", nameof(@operator)),
             };
 
-            var val = Expression.Constant(compareNode.Value, compareNode.ValueType);
-            return op(property, val);
+            var right = Expression.Constant(rightValue, valueType);
+            return op(left, right);
         }
     }
 }

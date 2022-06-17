@@ -1,43 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace MQuery.Filter
 {
-    public class FilterDocument
+    public class FilterDocument<T>
     {
-        private readonly List<PropertyComparesNode> _propertyCompares = new();
+        private readonly List<IPropertyComparesNode> _propertyCompares = new();
 
-        public Type ElementType { get; }
+        public IEnumerable<IPropertyComparesNode> PropertyCompares => _propertyCompares.AsReadOnly();
 
-        public IEnumerable<PropertyComparesNode> PropertyCompares => _propertyCompares.AsReadOnly();
-
-        public FilterDocument(Type eleType)
+        public void AddPropertyCompare<TProp, TValue>(Expression<Func<T, TProp>> selector, CompareOperator compare, TValue prop)
         {
-            ElementType = eleType;
-        }
-
-        public void AddPropertyCompare(PropertyNode property, ICompareNode compare, params ICompareNode[] otherCompares)
-        {
-            if(property is null)
-                throw new ArgumentNullException(nameof(property));
-
-            var cmp = _propertyCompares.FirstOrDefault(it => it.Property == property);
-            if(cmp == null)
+            if(selector is null)
             {
-                cmp = new PropertyComparesNode(property, compare, otherCompares);
-                _propertyCompares.Add(cmp);
+                throw new ArgumentNullException(nameof(selector));
             }
-            else
-            {
-                foreach(var otherCompare in otherCompares.Prepend(compare))
-                {
-                    cmp.AddCompare(otherCompare);
-                }
-            }
+
+            _propertyCompares.Add(new PropertyComparesNode<TValue>(selector, compare, prop));
         }
     }
 }

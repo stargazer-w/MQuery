@@ -6,7 +6,7 @@ namespace MQuery
 {
     public class QueryDocument<T>
     {
-        public FilterDocument Filter { get; } = new(typeof(T));
+        public FilterDocument<T> Filter { get; } = new();
 
         public SortDocument<T> Sort { get; } = new();
 
