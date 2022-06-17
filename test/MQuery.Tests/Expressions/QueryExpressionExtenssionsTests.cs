@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using MQuery.Filter;
+﻿using MQuery.Filter;
 using MQuery.Sort;
 using NUnit.Framework;
 using Shouldly;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace MQuery.Expressions.Tests
 {
@@ -31,9 +31,8 @@ namespace MQuery.Expressions.Tests
                 new Foo { Name = "Eva", Age = 33 },
                 new Foo { Name = "Frank", Age = 15 },
             };
-            var type = typeof(Foo);
-            var query = new QueryDocument(type);
-            var ageProp = type.GetProperty("Age");
+            var query = new QueryDocument<Foo>();
+            var ageProp = typeof(Foo).GetProperty("Age");
             query.Filter.AddPropertyCompare(ageProp, CompareOperator.Gt, 18);
             query.Filter.AddPropertyCompare(ageProp, CompareOperator.Lte, 40);
             query.Sort.AddSortByProperty(new(ageProp), SortPattern.Desc);
