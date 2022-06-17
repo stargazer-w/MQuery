@@ -1,19 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using MQuery.Expressions;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using MQuery.Expressions;
 
 namespace MQuery
 {
     public class Query<T>
     {
-        public QueryDocument Document { get; }
+        public QueryDocument<T> Document { get; }
 
         public Query()
         {
-            Document = new QueryDocument(typeof(T));
+            Document = new QueryDocument<T>();
         }
 
         public IQueryable<T> ApplyTo(IQueryable<T> qy)
@@ -35,7 +33,7 @@ namespace MQuery
         }
         public IQueryable<T> SliceTo(IQueryable<T> qy)
         {
-            var expr = (Expression<Func<IQueryable<T>, IQueryable<T>>>)Document.Slicing.ToExpression();
+            var expr = Document.Slicing.ToExpression<T>();
             return expr.Compile()(qy);
         }
     }
