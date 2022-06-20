@@ -12,9 +12,11 @@ namespace MQuery.Sort
 
         public void AddSortByProperty<TProp>(Expression<Func<T, TProp>> selector, SortPattern pattern, int order = int.MaxValue)
         {
-            if(selector is null)
-                throw new ArgumentNullException(nameof(selector));
+            AddSortByProperty(new(selector, pattern), order);
+        }
 
+        public void AddSortByProperty(SortByPropertyNode sortByPropertyNode, int order = int.MaxValue)
+        {
             order = order switch
             {
                 < 0 => 0,
@@ -22,7 +24,7 @@ namespace MQuery.Sort
                 _ => order,
             };
 
-            _sortByProperties.Insert(order, new (selector, pattern));
+            _sortByProperties.Insert(order, sortByPropertyNode);
         }
     }
 }

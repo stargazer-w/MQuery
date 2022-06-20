@@ -12,12 +12,12 @@ namespace MQuery.Filter
 
         public void AddPropertyCompare<TProp, TValue>(Expression<Func<T, TProp>> selector, CompareOperator @operator, TValue value)
         {
-            if(selector is null)
-            {
-                throw new ArgumentNullException(nameof(selector));
-            }
+            AddPropertyCompare(new PropertyComparesNode<TValue>(selector, @operator, value));
+        }
 
-            _propertyCompares.Add(new PropertyComparesNode<TValue>(selector, @operator, value));
+        public void AddPropertyCompare(IPropertyComparesNode propertyComparesNode)
+        {
+            _propertyCompares.Add(propertyComparesNode);
         }
     }
 }
