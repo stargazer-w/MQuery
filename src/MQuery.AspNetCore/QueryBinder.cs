@@ -27,7 +27,7 @@ namespace MQuery.AspNetCore
             var parserType = typeof(QueryParser<>).MakeGenericType(elementType);
             if(
                 bindingContext.ModelMetadata is DefaultModelMetadata meta
-                && meta.Attributes.ParameterAttributes.FirstOrDefault(a => a is BindAttribute) is BindAttribute bind
+                && meta.Attributes.ParameterAttributes!.FirstOrDefault(a => a is BindAttribute) is BindAttribute bind
             )
             {
                 _options.IncludeProps ??= new();
@@ -37,13 +37,13 @@ namespace MQuery.AspNetCore
 
             try
             {
-                var query = parserType.GetMethod("Parse").Invoke(parser, new object[] { queryString.ToString() });
+                var query = parserType.GetMethod("Parse")!.Invoke(parser, new object[] { queryString.ToString() })!;
                 bindingContext.Result = ModelBindingResult.Success(query);
                 bindingContext.ValidationState.Add(query, new() { SuppressValidation = true });
             }
             catch(TargetInvocationException e) when(e.InnerException is ParseException pe)
             {
-                bindingContext.ModelState.AddModelError(pe.Key, pe.Message);
+                bindingContext.ModelState.AddModelError(pe.Key ?? string.Empty, pe.Message);
                 bindingContext.Result = ModelBindingResult.Failed();
             }
 
