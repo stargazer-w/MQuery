@@ -1,8 +1,8 @@
-﻿using System;
+﻿using NUnit.Framework;
+using Shouldly;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
-using Shouldly;
 
 namespace MQuery.QueryString.Tests
 {
@@ -187,6 +187,32 @@ namespace MQuery.QueryString.Tests
                     it.Bar.Address == "cde"
                     && it.Bar.CreatedAt > new DateTimeOffset(new DateTime(2000, 1, 1), TimeSpan.FromHours(8))
                 )
+            );
+        }
+
+        [Test()]
+        public void ParseWithIcludedProps()
+        {
+            var query = new QueryParser<Foo>(new ParserOptions
+            {
+                IncludeProps = new() { "Name" }
+            }).Parse("name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2");
+            var source = new List<Foo>
+            {
+                new Foo { Name = "Alice", Age = 18 },
+                new Foo { Name = "Bob", Age = 30 },
+                new Foo { Name = "Carl", Age = 50 },
+                new Foo { Name = "David", Age = 20 },
+                new Foo { Name = "Eva", Age = 33 },
+                new Foo { Name = "Frank", Age = 15 },
+            };
+
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.Where(it => it.Name != "Alice")
+                      .Skip(1)
+                      .Take(2)
             );
         }
     }

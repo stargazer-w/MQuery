@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Web;
-using MQuery.Filter;
-using MQuery.Slicing;
+﻿using MQuery.Filter;
+using MQuery.Slice;
 using MQuery.Sort;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace MQuery.QueryString
 {
@@ -42,134 +40,154 @@ namespace MQuery.QueryString
                 queryString = queryString.Substring(1);
 
             var query = new Query<T>();
-            var parameters = StructureQueryString(queryString);
+            var parameters = Utils.StructureQueryString(queryString);
             var props = typeof(T).GetProperties();
             foreach(var pair in parameters.Where(it => !string.IsNullOrEmpty(it.Key)))
             {
-                if(MatchFilter(pair.Key, pair.Value, query.Document.Filter))
-                    continue;
-
-                if(MatchSort(pair.Key, pair.Value.First(), query.Document.Sort))
-                    continue;
-
-                if(MatchSlicing(pair.Key, pair.Value.First(), query.Document.Slicing))
-                    continue;
+                try
+                {
+                    if(MatchFilter(pair.Key) is { IsMathed: true, Value: { PropSelector: var filterPS, Op: var op, } })
+                    {
+                        SetFilter(query.Document.Filter, filterPS, op, pair.Value);
+                    }
+                    else if(MatchSort(pair.Key) is { IsMathed: true, Value.PropSelector: var sortPS })
+                    {
+                        SetSort(query.Document.Sort, sortPS, pair.Value.First());
+                    }
+                    else if(MatchSlice(pair.Key) is { IsMathed: true, Value.SliceSetTo: var setTo })
+                    {
+                        SetSlice(query.Document.Slice, setTo, pair.Value.First());
+                    }
+                }
+                catch(ArgumentException e)
+                {
+                    throw new ParseException(e.Message, e.InnerException) { Key = pair.Key, Values = pair.Value };
+                }
             }
 
-            query.Document.Slicing.Limit ??= _defaultLimit;
-            if(query.Document.Slicing.Limit > _maxLimit)
-                query.Document.Slicing.Limit = _maxLimit;
+            query.Document.Slice.Limit ??= _defaultLimit;
+            if(query.Document.Slice.Limit > _maxLimit)
+                query.Document.Slice.Limit = _maxLimit;
 
             return query;
         }
 
-        public bool MatchSlicing(string key, string valueString, SlicingDocument document)
+        private MatchResult<SliceKeyData> MatchSlice(string key)
         {
-            if(key == "$skip")
+            return key switch
             {
-                if(!int.TryParse(valueString, out var skip))
-                    throw new ParseException($"$skip value must be integer") { Key = key };
-                document.Skip = skip;
-                return true;
-            }
-
-            if(key == "$limit")
-            {
-                if(!int.TryParse(valueString, out var limit))
-                    throw new ParseException($"$limit value must be integer") { Key = key };
-                document.Limit = limit;
-                return true;
-            }
-
-            return false;
+                "$skip" => MatchResult.Matched(new SliceKeyData(SliceSetTo.Skip)),
+                "$limit" => MatchResult.Matched(new SliceKeyData(SliceSetTo.Limit)),
+                _ => MatchResult.Unmatched<SliceKeyData>(),
+            };
         }
 
-        public bool MatchSort(string key, string valueString, SortDocument document)
+        private void SetSlice(SliceDocument slice, SliceSetTo setTo, string valueString)
         {
-            var sortMatch = Regex.Match(key, @"^\$sort\[([\w\.]+)\]");
-            if(!sortMatch.Success)
-                return false;
+            if(!int.TryParse(valueString, out var value))
+                throw new ArgumentException($"$limit value must be integer");
 
-            var propName = sortMatch.Groups[1].Value;
-
-            var prop = ParseProperty(propName);
-            if(prop is null)
-                return true;
-
-            if(!int.TryParse(valueString, out int pattern) || !Enum.IsDefined(typeof(SortPattern), pattern))
-                throw new ParseException("sort pattern can only be 1(asc) or -1(desc)") { Key = key, Values = new[] { valueString } };
-
-            document.AddSortByProperty(prop, (SortPattern)pattern);
-            return true;
+            switch(setTo)
+            {
+                case SliceSetTo.Skip:
+                    slice.Skip = value;
+                    break;
+                case SliceSetTo.Limit:
+                    slice.Limit = value;
+                    break;
+            }
         }
 
-        public bool MatchFilter(string key, IEnumerable<string> valueStrings, FilterDocument document)
+        private MatchResult<SortKeyData> MatchSort(string key)
         {
-            var filterMatch = Regex.Match(key, @"^([\w\.]+)(\[\$(.+?)\])?(\[\d*\])?$");
-            if(!filterMatch.Success)
-                return false;
+            var match = Regex.Match(key, @"^\$sort\[([\w\.]+)\]");
+            if(!match.Success)
+                return MatchResult.Unmatched<SortKeyData>();
 
-            var propName = filterMatch.Groups[1].Value;
-            var opString = filterMatch.Groups[3].Success ? filterMatch.Groups[3].Value : "eq";
-
-            var prop = ParseProperty(propName);
-            if(prop is null)
-                return true;
-
-            if(!Enum.TryParse<CompareOperator>(opString, true, out var op))
-                return true;
-
-            ICompareNode compareNode;
-            try
-            {
-                if(prop.PropertyType.GetInterface("ICollection`1") is { } colType)
-                {
-                    var eleType = colType.GetGenericArguments().First();
-                    compareNode = CreateCompareNode(eleType, op, valueStrings);
-                }
-                else
-                {
-                    compareNode = CreateCompareNode(prop.PropertyType, op, valueStrings);
-                }
-            }
-            catch(InvalidOperationException e)
-            {
-                throw new ParseException(e.Message, e.InnerException) { Key = key, Values = valueStrings };
-            }
-
-            document.AddPropertyCompare(prop, compareNode);
-            return true;
+            var propSelector = match.Groups[1].Value;
+            return MatchResult.Matched(new SortKeyData(propSelector));
         }
 
-        private ICompareNode CreateCompareNode(Type type, CompareOperator op, IEnumerable<string> valueStrings)
+        public void SetSort(SortDocument<T> sort, string selectorString, string patternString)
         {
-            valueStrings = valueStrings.Where(it => it != null);
-            var (value, valueType) = op switch
+            if(_includeProps != null && !_includeProps.Contains(selectorString, StringComparer.OrdinalIgnoreCase))
+                return;
+
+            var propSelector = Utils.StringToPropSelector<T>(selectorString);
+
+            if(!int.TryParse(patternString, out int patternInt))
+                throw new ArgumentException($"$sort value must be integer");
+
+            if(patternInt == 0)
+                return;
+
+            var pattern = patternInt switch
             {
-                CompareOperator.In or CompareOperator.Nin => (ParseValues(type, valueStrings), typeof(IEnumerable<>).MakeGenericType(type)),
-                _ => (ParseValue(type, valueStrings.First()), type),
+                > 0 => SortPattern.Acs,
+                < 0 => SortPattern.Desc,
+                _ => throw new NotImplementedException(),
+            };
+            var sortByPropertyNode = new SortByPropertyNode(propSelector, pattern);
+            sort.AddSortByProperty(sortByPropertyNode, Math.Abs(patternInt));
+        }
+
+        private MatchResult<FilterKeyData> MatchFilter(string key)
+        {
+            var match = Regex.Match(key, @"^([\w\.]+)(\[\$(.+?)\])?(\[\d*\])?$");
+            if(!match.Success)
+                return MatchResult.Unmatched<FilterKeyData>();
+
+            var propSelector = match.Groups[1].Value;
+            var op = match.Groups[3] switch
+            {
+                { Success: true, Value: var v } => v,
+                _ => "eq"
             };
 
-            return (ICompareNode)Activator.CreateInstance(typeof(CompareNode<>).MakeGenericType(valueType), op, value);
+            return MatchResult.Matched(new FilterKeyData(propSelector, op));
         }
 
-        private PropertyNode? ParseProperty(string key)
+        private void SetFilter(FilterDocument<T> filter, string selectorString, string opString, IEnumerable<string> valueStrings)
         {
-            if(_includeProps?.Contains(key) == false)
-                return null;
+            if(_includeProps != null && !_includeProps.Contains(selectorString, StringComparer.OrdinalIgnoreCase))
+                return;
 
-            var selectors = key.Split('.');
-            var type = typeof(T);
-            List<PropertyInfo> properties = new();
-            foreach(var s in selectors)
+            LambdaExpression selector;
+            try
             {
-                var p = type.GetProperty(s, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if(p is null)
-                    return null;
-                type = p.PropertyType;
-                properties.Add(p);
+                selector = Utils.StringToPropSelector<T>(selectorString);
             }
-            return new PropertyNode(properties.First(), properties.Skip(1).ToArray());
+            catch
+            {
+                return;
+            }
+
+            if(!Enum.TryParse<CompareOperator>(opString, true, out var op))
+                return;
+
+            var compareNode = CreateCompareNode(selector, op, valueStrings);
+            filter.AddPropertyCompare(compareNode);
+        }
+
+        private IPropertyComparesNode CreateCompareNode(LambdaExpression propSelector, CompareOperator op, IEnumerable<string> valueStrings)
+        {
+            var parseType = propSelector.ReturnType switch
+            {
+                var x when x.GetInterface("ICollection`1") is { } colType => colType.GetGenericArguments()[0],
+                var x => x
+            };
+
+            var (value, valueType) = op switch
+            {
+                CompareOperator.In or CompareOperator.Nin => (
+                    ParseValues(parseType, valueStrings),
+                    typeof(IEnumerable<>).MakeGenericType(parseType)
+                ),
+                _ => (ParseValue(parseType, valueStrings.First()), parseType)
+            };
+
+            var compareNodeType = typeof(PropertyComparesNode<>).MakeGenericType(valueType);
+            return (IPropertyComparesNode)Activator.CreateInstance(compareNodeType, propSelector, op, value);
         }
 
         private object ParseValues(Type type, IEnumerable<string> valueStrings)
@@ -194,7 +212,7 @@ namespace MQuery.QueryString
             }
             catch(Exception e)
             {
-                throw new InvalidOperationException($"Can not parse {str ?? "<Empty>"} to type {type.Name}", e);
+                throw new ArgumentException($"Can not parse {str ?? "<Empty>"} to type {type.Name}", e);
             }
         }
 
@@ -210,20 +228,6 @@ namespace MQuery.QueryString
                 { } when type.IsGenericParameter && type.GetGenericTypeDefinition() == typeof(Nullable<>) => FriendlyTypeDisplay(type.GetGenericArguments().First()) + "or Null",
                 _ => type.Name,
             };
-        }
-
-        public static IDictionary<string, string[]> StructureQueryString(string queryString)
-        {
-            return queryString.Split('&')
-                              .Select(it =>
-                              {
-                                  var pair = it.Split('=');
-                                  var key = HttpUtility.UrlDecode(pair.First());
-                                  var value = pair.Length > 1 ? HttpUtility.UrlDecode(pair.Last()) : "";
-                                  return (key, value);
-                              })
-                              .GroupBy(it => it.key, it => it.value)
-                              .ToDictionary(it => it.Key, it => it.ToArray());
         }
     }
 }
