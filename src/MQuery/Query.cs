@@ -1,38 +1,51 @@
-﻿using MQuery.Expressions;
+﻿using System;
 using System.Linq;
+using System.Linq.Expressions;
+using MQuery.Expressions;
 
 namespace MQuery
 {
-    public class Query<T>
+    public class Query<T> : IQuery<T>
     {
-        public QueryDocument<T> Document { get; }
-
-        public Query()
-        {
-            Document = new QueryDocument<T>();
-        }
+        public QueryDocument<T> Document { get; } = new();
 
         public IQueryable<T> ApplyTo(IQueryable<T> qy)
         {
-            var expr = Document.ToExpression();
-            return expr.Compile()(qy);
+            return GetQueryExpression().Compile()(qy);
         }
 
         public IQueryable<T> FilterTo(IQueryable<T> qy)
         {
-            var expr = Document.Filter.ToExpression();
-            return expr.Compile()(qy);
+            return GetFilterExpression().Compile()(qy);
         }
 
         public IQueryable<T> SortTo(IQueryable<T> qy)
         {
-            var expr = Document.Sort.ToExpression();
-            return expr.Compile()(qy);
+            return GetSortExpression().Compile()(qy);
         }
         public IQueryable<T> SliceTo(IQueryable<T> qy)
         {
-            var expr = Document.Slice.ToExpression<T>();
-            return expr.Compile()(qy);
+            return GetSliceExpression().Compile()(qy);
+        }
+
+        public Expression<Func<IQueryable<T>, IQueryable<T>>> GetQueryExpression()
+        {
+            return Document.ToExpression();
+        }
+
+        public Expression<Func<IQueryable<T>, IQueryable<T>>> GetFilterExpression()
+        {
+            return Document.Filter.ToExpression();
+        }
+
+        public Expression<Func<IQueryable<T>, IQueryable<T>>> GetSortExpression()
+        {
+            return Document.Sort.ToExpression();
+        }
+
+        public Expression<Func<IQueryable<T>, IQueryable<T>>> GetSliceExpression()
+        {
+            return Document.Slice.ToExpression<T>();
         }
     }
 }
