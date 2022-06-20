@@ -12,10 +12,14 @@ namespace MQuery.AspNetCore
             _options = options;
         }
 
-        public IModelBinder GetBinder(ModelBinderProviderContext context)
+        public IModelBinder? GetBinder(ModelBinderProviderContext context)
         {
-            if(context.Metadata.ModelType.IsGenericType && context.Metadata.ModelType.GetGenericTypeDefinition() == typeof(Query<>))
-                return new QueryBinder(_options);
+            if(context.Metadata.ModelType.IsGenericType)
+            {
+                var defType = context.Metadata.ModelType.GetGenericTypeDefinition();
+                if(defType == typeof(Query<>) || defType == typeof(IQuery<>))
+                    return new QueryBinder(_options);
+            }
 
             return null;
         }
