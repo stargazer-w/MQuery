@@ -1,11 +1,11 @@
-﻿using MQuery.Filter;
-using MQuery.Slice;
-using MQuery.Sort;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
+using MQuery.Filter;
+using MQuery.Slice;
+using MQuery.Sort;
 
 namespace MQuery.QueryString
 {
@@ -128,7 +128,7 @@ namespace MQuery.QueryString
                 _ => throw new NotImplementedException(),
             };
             var sortByPropertyNode = new SortByPropertyNode(propSelector, pattern);
-            sort.AddSortByProperty(sortByPropertyNode, Math.Abs(patternInt));
+            sort.AddSortByProperty(sortByPropertyNode);
         }
 
         private MatchResult<FilterKeyData> MatchFilter(string key)
