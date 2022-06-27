@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using MQuery.NSwag;
 
 namespace MQuery.AspNetCore.Sample
 {
@@ -25,13 +19,18 @@ namespace MQuery.AspNetCore.Sample
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers(options=> 
+            services.AddControllers(mvc =>
             {
-                options.AddMQuery(o => 
+                mvc.AddMQuery(o =>
                 {
                     o.DefaultLimit = 50;
                     o.MaxLimit = 50;
                 });
+            });
+
+            services.AddOpenApiDocument(openapi =>
+            {
+                openapi.AddMQuery();
             });
         }
 
@@ -43,9 +42,9 @@ namespace MQuery.AspNetCore.Sample
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
-
             app.UseRouting();
+
+            app.UseOpenApi();
 
             app.UseAuthorization();
 

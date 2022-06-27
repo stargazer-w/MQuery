@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30413.136
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32611.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MQuery", "src\MQuery\MQuery.csproj", "{3D7A01DA-7CE6-4CE5-ABB0-8D5121E42947}"
 EndProject
@@ -13,11 +13,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MQuery.QueryString", "src\M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MQuery.QueryString.Tests", "test\MQuery.QueryString.Tests\MQuery.QueryString.Tests.csproj", "{D468EE80-572E-466D-A75B-7F4277EDA4F6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MQuery.AspNetCore", "src\MQuery.AspNetCore\MQuery.AspNetCore.csproj", "{9D0F7F7A-4C59-48C6-A9CF-EA86A30FF41A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MQuery.AspNetCore", "src\MQuery.AspNetCore\MQuery.AspNetCore.csproj", "{9D0F7F7A-4C59-48C6-A9CF-EA86A30FF41A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{DB752FAC-53A9-4623-BA90-4A24D497DCDA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MQuery.AspNetCore.Sample", "sample\MQuery.AspNetCore.Sample\MQuery.AspNetCore.Sample.csproj", "{E9595911-6D8C-42E6-A015-08C61183EDB7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MQuery.AspNetCore.Sample", "sample\MQuery.AspNetCore.Sample\MQuery.AspNetCore.Sample.csproj", "{E9595911-6D8C-42E6-A015-08C61183EDB7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MQuery.NSwag", "MQuery.NSwag\MQuery.NSwag.csproj", "{2E80320F-0767-403B-BD20-B2287786CEBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +51,10 @@ Global
 		{E9595911-6D8C-42E6-A015-08C61183EDB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E9595911-6D8C-42E6-A015-08C61183EDB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E9595911-6D8C-42E6-A015-08C61183EDB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E80320F-0767-403B-BD20-B2287786CEBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E80320F-0767-403B-BD20-B2287786CEBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E80320F-0767-403B-BD20-B2287786CEBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E80320F-0767-403B-BD20-B2287786CEBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
