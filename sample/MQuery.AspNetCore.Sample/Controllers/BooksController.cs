@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MQuery.AspNetCore.Sample.Controllers
@@ -30,7 +28,8 @@ namespace MQuery.AspNetCore.Sample.Controllers
             public double Price { get; set; }
         }
 
-        public IEnumerable<Book> QueryBooks(Query<Book> query)
+        [HttpGet]
+        public IEnumerable<Book> QueryBooks(IQuery<Book> query)
         {
             var books = new List<Book>
             {
