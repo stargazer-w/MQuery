@@ -186,6 +186,9 @@ namespace MQuery.QueryString
                 _ => (ParseValue(parseType, valueStrings.First()), parseType)
             };
 
+            if(value is null)
+                valueType = propSelector.ReturnType;
+
             var compareNodeType = typeof(PropertyComparesNode<>).MakeGenericType(valueType);
             return (IPropertyComparesNode)Activator.CreateInstance(compareNodeType, propSelector, op, value);
         }
