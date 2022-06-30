@@ -144,12 +144,50 @@ namespace MQuery.Expressions.Tests
 
             var type = typeof(NullableValueProp);
             var filter = new FilterDocument<NullableValueProp>();
-            filter.AddPropertyCompare(x => x.Foo, CompareOperator.Eq,(int?) 0);
+            filter.AddPropertyCompare(x => x.Foo, CompareOperator.Eq, (int?)0);
 
             var expr = filter.ToExpression();
             var result = expr.Compile()(source.AsQueryable());
 
             result.ShouldBe(source.Where(x => x.Foo == 0));
+        }
+
+        public class CollectionProp
+        {
+            public List<int> List { get; set; } = null;
+        }
+
+        [Test]
+        public void CollectionEqualNull_Should_CompareSelf()
+        {
+            var obj = new CollectionProp();
+            var source = new List<CollectionProp> { obj, new() { List = new() } };
+
+            var filter = new FilterDocument<CollectionProp>();
+            filter.AddPropertyCompare(x => x.List, CompareOperator.Eq, (List<int>)null);
+
+            var expr = filter.ToExpression();
+            var result = expr.Compile()(source.AsQueryable());
+
+            result.ShouldBe(source.Where(x => x.List == null));
+        }
+
+        [Test]
+        public void CollectionCompare_Should_CompareAnyElement()
+        {
+            var source = new List<CollectionProp>
+            {
+                new() { List = new(){ 15,20 } },
+                new() { List = new(){ 20,25 } }
+            };
+
+            var filter = new FilterDocument<CollectionProp>();
+            filter.AddPropertyCompare(x => x.List, CompareOperator.Gt, 25);
+
+            var expr = filter.ToExpression();
+            var result = expr.Compile()(source.AsQueryable());
+
+            result.ShouldBe(source.Where(x => x.List.Any(x => x > 25)));
         }
     }
 }
