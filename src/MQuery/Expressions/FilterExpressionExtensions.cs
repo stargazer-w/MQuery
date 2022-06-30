@@ -18,20 +18,22 @@ namespace MQuery.Expressions
         /// <returns>对 IQueryable 进行筛选的表达式</returns>
         public static Expression<Func<IQueryable<T>, IQueryable<T>>> ToExpression<T>(this FilterDocument<T> filter)
         {
-            if(filter is null)
-                throw new ArgumentNullException(nameof(filter));
+            throw new NotImplementedException();
 
-            Expression<Func<IQueryable<T>, IQueryable<T>>> noop = qy => qy;
+            //if(filter is null)
+            //    throw new ArgumentNullException(nameof(filter));
 
-            var whereInfo = _whereInfo.MakeGenericMethod(typeof(T));
-            var body = noop.Body;
-            foreach(var propCompare in filter.PropertyCompares)
-            {
-                var predicate = BuildWherePredicate<T>(propCompare);
-                body = Expression.Call(whereInfo, body, predicate);
-            }
+            //Expression<Func<IQueryable<T>, IQueryable<T>>> noop = qy => qy;
 
-            return Expression.Lambda<Func<IQueryable<T>, IQueryable<T>>>(body, noop.Parameters);
+            //var whereInfo = _whereInfo.MakeGenericMethod(typeof(T));
+            //var body = noop.Body;
+            //foreach(var propCompare in filter.PropertyCompares)
+            //{
+            //    var predicate = BuildWherePredicate<T>(propCompare);
+            //    body = Expression.Call(whereInfo, body, predicate);
+            //}
+
+            //return Expression.Lambda<Func<IQueryable<T>, IQueryable<T>>>(body, noop.Parameters);
         }
 
         public static Expression<Func<T, bool>> BuildWherePredicate<T>(IPropertyComparesNode propertyComparesNode)
