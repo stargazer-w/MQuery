@@ -42,7 +42,7 @@ namespace MQuery.Expressions
             }
 
             var selector = propertyComparesNode.PropertySelector;
-            if(selector.ReturnType.GetInterface("ICollection`1") is not null)
+            if(selector.ReturnType.GetInterface("ICollection`1") is not null && propertyComparesNode.Value is not null)
             {
                 // x => x.Prop.Any(x => x <op> value)
                 var body = BuildAnyCompareBody(
