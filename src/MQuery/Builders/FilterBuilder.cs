@@ -34,7 +34,7 @@ namespace MQuery.Builders
         {
             _propSelector = propSelector;
             _filterBuilder = filterBuilder;
-            _createQueryProperty = op => new QueryProperty(_propSelector, op);
+            _createQueryProperty = op => new PropertyOperation(_propSelector, op);
         }
 
         public FilterBuilder<T> Eq<U>(U value)
