@@ -27,7 +27,7 @@ namespace MQuery.Filter.Tests
         [Test]
         public void CombineTest(bool condition, bool reuslt)
         {
-            var propOp = QueryProperty.Self<object>(new ConstantOperator(condition));
+            var propOp = PropertyOperation.Self<object>(new ConstantOperator(condition));
             var op = new Not(propOp);
             var param = Expression.Parameter(typeof(object));
             var body = op.Combine(param);
