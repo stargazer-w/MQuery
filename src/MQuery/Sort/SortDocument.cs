@@ -1,30 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace MQuery.Sort
 {
     public class SortDocument<T>
     {
-        private readonly List<SortByPropertyNode> _sortByProperties = new();
 
-        public IEnumerable<SortByPropertyNode> SortByPropertyNodes => _sortByProperties.AsReadOnly();
+        public List<SortBy> SortBys { get; } = new();
 
-        public void AddSortByProperty<TProp>(Expression<Func<T, TProp>> selector, SortPattern pattern, int order = int.MaxValue)
+        public IQueryable<T> ApplyTo(IQueryable<T> source)
         {
-            AddSortByProperty(new(selector, pattern), order);
+            return ToExpression().Compile()(source);
         }
 
-        public void AddSortByProperty(SortByPropertyNode sortByPropertyNode, int order = int.MaxValue)
+        public Expression<Func<IQueryable<T>, IQueryable<T>>> ToExpression()
         {
-            order = order switch
+            Expression<Func<IQueryable<T>, IQueryable<T>>> expr = source => source;
+            foreach(var sortBy in Enumerable.Reverse(SortBys))
             {
-                < 0 => 0,
-                _ when order > _sortByProperties.Count => _sortByProperties.Count,
-                _ => order,
-            };
-
-            _sortByProperties.Insert(order, sortByPropertyNode);
+                expr = expr.Update(sortBy.Combine(expr.Body), expr.Parameters);
+            }
+            return expr;
         }
     }
 }

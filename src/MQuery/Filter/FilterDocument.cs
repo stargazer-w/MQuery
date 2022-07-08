@@ -14,9 +14,9 @@ namespace MQuery.Filter
         {
             var body = Operation.Combine(_alwaysTrue.Parameters[0]);
             if(body is ConstantExpression { Value: true })
-                return x => x;
+                return source => source;
             var predicate = _alwaysTrue.Update(body, _alwaysTrue.Parameters);
-            return x => x.Where(predicate);
+            return source => source.Where(predicate);
         }
 
         public IQueryable<T> ApplyTo(IQueryable<T> source)
