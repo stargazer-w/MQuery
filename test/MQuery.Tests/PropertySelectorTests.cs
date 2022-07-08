@@ -1,9 +1,6 @@
-﻿using MQuery;
-using NUnit.Framework;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq.Expressions;
-using System.Text;
+using NUnit.Framework;
 
 namespace MQuery.Tests
 {
@@ -31,7 +28,7 @@ namespace MQuery.Tests
             var func = lambda.Compile();
             var a = func(new Foo());
 
-            Assert.AreEqual(selector.PropType, typeof(int));
+            Assert.AreEqual(selector.PropertyType, typeof(int));
             Assert.AreEqual(a, 42);
         }
 
