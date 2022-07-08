@@ -1,15 +1,17 @@
-﻿namespace MQuery.QueryString
+﻿using System.Collections.Generic;
+
+namespace MQuery.QueryString
 {
     internal class FilterKeyData
     {
-        public FilterKeyData(string propSelector, string op)
+        public FilterKeyData(string selector, IEnumerable<string> ops)
         {
-            PropSelector = propSelector;
-            Op = op;
+            Selector = selector;
+            Ops = ops;
         }
 
-        public string PropSelector { get; }
+        public string Selector { get; }
 
-        public string Op { get; }
+        public IEnumerable<string> Ops { get; }
     }
 }

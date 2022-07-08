@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text.RegularExpressions;
+using MQuery.Expressions;
 using MQuery.Filter;
 using MQuery.Slice;
 using MQuery.Sort;
@@ -46,9 +46,9 @@ namespace MQuery.QueryString
             {
                 try
                 {
-                    if(MatchFilter(pair.Key) is { IsMathed: true, Value: { PropSelector: var filterPS, Op: var op, } })
+                    if(MatchFilter(pair.Key) is { IsMathed: true, Value: FilterKeyData data })
                     {
-                        SetFilter(query.Document.Filter, filterPS, op, pair.Value);
+                        SetFilter(query.Document.Filter, data, pair.Value);
                     }
                     else if(MatchSort(pair.Key) is { IsMathed: true, Value.PropSelector: var sortPS })
                     {
@@ -62,6 +62,10 @@ namespace MQuery.QueryString
                 catch(ArgumentException e)
                 {
                     throw new ParseException(e.Message, e.InnerException) { Key = pair.Key, Values = pair.Value };
+                }
+                catch(NotSupportedException)
+                {
+                    throw new ParseException("不支持的操作符") { Key = pair.Key, Values = pair.Value };
                 }
             }
 
@@ -104,13 +108,13 @@ namespace MQuery.QueryString
             if(!match.Success)
                 return MatchResult.Unmatched<SortKeyData>();
 
-            var propSelector = match.Groups[1].Value;
-            return MatchResult.Matched(new SortKeyData(propSelector));
+            var selector = match.Groups[1].Value;
+            return MatchResult.Matched(new SortKeyData(selector));
         }
 
         public void SetSort(SortDocument<T> sort, string selectorString, string patternString)
         {
-            if(_includeProps != null && !_includeProps.Contains(selectorString, StringComparer.OrdinalIgnoreCase))
+            if(!IsInvalidProp(selectorString))
                 return;
 
             var propSelector = Utils.StringToPropSelector<T>(selectorString);
@@ -133,61 +137,78 @@ namespace MQuery.QueryString
 
         private MatchResult<FilterKeyData> MatchFilter(string key)
         {
-            var match = Regex.Match(key, @"^([\w\.]+)(\[\$(.+?)\])?(\[\d*\])?$");
+            var match = Regex.Match(key, @"^([\w\.]+)(\[\$(.+?)\])*(\[\d*\])?$");
             if(!match.Success)
                 return MatchResult.Unmatched<FilterKeyData>();
 
-            var propSelector = match.Groups[1].Value;
-            var op = match.Groups[3] switch
-            {
-                { Success: true, Value: var v } => v,
-                _ => "eq"
-            };
+            var selector = match.Groups[1].Value;
+            var ops = match.Groups[3].Captures.Cast<Capture>().Select(x => x.Value);
 
-            return MatchResult.Matched(new FilterKeyData(propSelector, op));
+            return MatchResult.Matched(new FilterKeyData(selector, ops));
         }
 
-        private void SetFilter(FilterDocument<T> filter, string selectorString, string opString, IEnumerable<string> valueStrings)
+        private void SetFilter(FilterDocument<T> filter, FilterKeyData data, IEnumerable<string> valueStrings)
         {
-            if(_includeProps != null && !_includeProps.Contains(selectorString, StringComparer.OrdinalIgnoreCase))
+            if(!IsInvalidProp(data.Selector))
                 return;
 
-            LambdaExpression selector;
+            var props = data.Selector
+                .Split('.')
+                .Select(x => char.ToUpper(x[0]) + x[1..])
+                .ToArray();
+            PropertySelector selector;
             try
             {
-                selector = Utils.StringToPropSelector<T>(selectorString);
+                selector = new PropertySelector(typeof(T), props);
             }
             catch
             {
                 return;
             }
 
-            if(!Enum.TryParse<CompareOperator>(opString, true, out var op))
-                return;
-
-            var compareNode = CreateCompareNode(selector, op, valueStrings);
-            filter.AddPropertyCompare(compareNode);
+            filter.And(ParseOperation(selector, data.Ops.ToArray(), valueStrings));
         }
 
-        private IPropertyComparesNode CreateCompareNode(LambdaExpression propSelector, CompareOperator op, IEnumerable<string> valueStrings)
+        private IParameterOperation ParseOperation(PropertySelector selector, string[] ops, IEnumerable<string> values)
         {
-            var parseType = propSelector.ReturnType switch
+            var eleType = selector.PropertyCollectionElementType;
+            return ops switch
             {
-                var x when x.GetInterface("ICollection`1") is { } colType => colType.GetGenericArguments()[0],
-                var x => x
+                [] => ParseOperation(selector, new[] { "eq" }, values),
+                // 默认对集合类型的属性所有操作都改为对其任意元素，
+                // 如array=x => array[$any]=x
+                // 除非是array[$eq]=<null> 或者 array[$ne]=<null>
+                _ when eleType is not null && !ops.Contains("any") && !(ops is ["eq"] or ["ne"] && values.First() is "")
+                    => ParseOperation(selector, ops.Prepend("any").ToArray(), values),
+                ["not", .. var other] => new Not(ParseOperation(selector, other, values)),
+                ["any", .. var other] => eleType switch
+                {
+                    not null => new PropertyOperation(selector, new Any(ParseOperation(new PropertySelector(eleType), other, values))),
+                    _ => throw new InvalidOperationException("The in operator must operate on an Array"),
+                },
+                ["nin"] => ParseOperation(selector, new[] { "not", "in" }, values),
+                [var @operator] => new PropertyOperation(selector, parseOperator(@operator)),
+                _ => throw new NotSupportedException()
             };
 
-            var (value, valueType) = op switch
+            IOperator parseOperator(string @operator)
             {
-                CompareOperator.In or CompareOperator.Nin => (
-                    ParseValues(parseType, valueStrings),
-                    typeof(IEnumerable<>).MakeGenericType(parseType)
-                ),
-                _ => (ParseValue(parseType, valueStrings.First()), parseType)
-            };
+                return @operator switch
+                {
+                    "eq" => createOperator(typeof(Equal<>), parseValue()),
+                    "ne" => createOperator(typeof(NotEqual<>), parseValue()),
+                    "gt" => createOperator(typeof(GreaterThen<>), parseValue()),
+                    "gte" => createOperator(typeof(GreaterThenOrEqual<>), parseValue()),
+                    "lt" => createOperator(typeof(LessThen<>), parseValue()),
+                    "lte" => createOperator(typeof(LessThenOrEqual<>), parseValue()),
+                    "in" => createOperator(typeof(In<>), parseValues()),
+                    _ => throw new NotSupportedException()
+                };
 
-            var compareNodeType = typeof(PropertyComparesNode<>).MakeGenericType(valueType);
-            return (IPropertyComparesNode)Activator.CreateInstance(compareNodeType, propSelector, op, value);
+                IOperator createOperator(Type opType, object? value) => (IOperator)Activator.CreateInstance(opType.MakeGenericType(selector.PropertyType), value);
+                object? parseValue() => ParseValue(selector.PropertyType, values.First());
+                object? parseValues() => ParseValues(selector.PropertyType, values);
+            }
         }
 
         private object ParseValues(Type type, IEnumerable<string> valueStrings)
@@ -214,6 +235,14 @@ namespace MQuery.QueryString
             {
                 throw new ArgumentException($"Can not parse {str ?? "<Empty>"} to type {type.Name}", e);
             }
+        }
+
+        private bool IsInvalidProp(string selector)
+        {
+            if(_includeProps == null)
+                return true;
+
+            return _includeProps.Any(selector.StartsWith);
         }
 
         private string FriendlyTypeDisplay(Type type)
