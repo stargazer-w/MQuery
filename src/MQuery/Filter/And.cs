@@ -21,7 +21,7 @@ namespace MQuery.Filter
             return Operators.Skip(1)
                  .Aggregate(
                      first.Combine(left),
-                     (x, y) => Expression.And(x, y.Combine(left))
+                     (x, y) => Expression.AndAlso(x, y.Combine(left))
                  );
         }
     }
