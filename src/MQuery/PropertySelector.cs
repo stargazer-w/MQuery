@@ -9,21 +9,30 @@ namespace MQuery
     {
         public IEnumerable<string> PropertyNames { get; }
         public Type LeftType { get; }
-        public Type PropType { get; }
+        public Type PropertyType { get; }
+        /// <summary>
+        /// 若属性类型是一个集合类型，则返回集合的元素类型，否则返回null
+        /// </summary>
+        public Type? PropertyCollectionElementType { get; }
 
         public PropertySelector(Type type, params string[] propertyNames)
         {
-            PropType = LeftType = type;
+            PropertyType = LeftType = type;
             for(int i = 0; i < propertyNames.Length; i++)
             {
                 var name = propertyNames[i];
-                var p = PropType.GetProperty(name);
+                var p = PropertyType.GetProperty(name);
                 if(p is null)
                 {
                     var nameChain = string.Join(".", propertyNames.Take(i + 1));
                     throw new ArgumentException($"can not found property {nameChain} of object");
                 }
-                PropType = p.PropertyType;
+                PropertyType = p.PropertyType;
+            }
+
+            if(IsCollection(PropertyType, out var eleType))
+            {
+                PropertyCollectionElementType = eleType;
             }
 
             PropertyNames = propertyNames;
@@ -40,6 +49,20 @@ namespace MQuery
                 selector = Expression.Property(selector, prop);
             }
             return selector;
+        }
+
+        static bool IsCollection(Type type, out Type? elementType)
+        {
+            if(type.GetInterface("ICollection`1")?.GetGenericArguments()[0] is Type eleType)
+            {
+                elementType = eleType;
+                return true;
+            }
+            else
+            {
+                elementType = null;
+                return false;
+            }
         }
     }
 }
