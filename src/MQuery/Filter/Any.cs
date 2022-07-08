@@ -19,14 +19,20 @@ namespace MQuery.Filter
         public Expression Combine(Expression left)
         {
             if(left.Type.GetInterface("ICollection`1")?.GenericTypeArguments?[0] is not Type eleType)
-                throw new ArgumentException("any-operator must combine a Collection expression");
+                throw new ArgumentException("operator any must combine a Collection expression");
 
-            var any = _any.MakeGenericMethod(eleType);
             var param = Expression.Parameter(eleType);
+            // x...
             var body = Operator.Combine(param);
+            // x=>x...
             var predicate = Expression.Lambda(body, param);
-
-            return Expression.Call(null, any, left, predicate);
+            // left.Any(x=>x...)
+            var any = _any.MakeGenericMethod(eleType);
+            var callAny = Expression.Call(null, any, left, predicate);
+            // left!=null
+            var nullGuard = Expression.NotEqual(left, Expression.Constant(null));
+            // left!=null && left.Any(x=>x...)
+            return Expression.AndAlso(nullGuard, callAny);
         }
     }
 }
