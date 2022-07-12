@@ -31,7 +31,7 @@ namespace MQuery.Filter.Tests
         {
             var propOps = conditions
                 .Select(x => new ConstantOperator(x))
-                .Select(PropertyOperation.Self<object>)
+                .Select(PropertyOperation<object>.Self)
                 .ToArray();
             var op = new And(propOps);
             var param = Expression.Parameter(typeof(object));
