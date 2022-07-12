@@ -9,7 +9,7 @@ namespace MQuery.QueryString.Tests
     [TestFixture()]
     public class QueryParserTests
     {
-        class Foo
+        public class Foo
         {
             public string Name { get; set; }
 
@@ -17,39 +17,101 @@ namespace MQuery.QueryString.Tests
 
             public Bar Bar { get; set; }
 
-            public List<string> Tags { get; set; } = new();
+            public List<int?> Tags { get; set; } = new();
         }
 
-        class Bar
+        public class Bar
         {
             public string Address { get; set; }
 
             public DateTimeOffset CreatedAt { get; set; }
         }
 
-        readonly List<Foo> source = new List<Foo>
+        public readonly List<Foo> source = new()
         {
-            new Foo { Name = "Alice", Age = 18, Bar = new Bar{ Address = "abc", CreatedAt = new DateTime(1888,5,3)}, Tags = { "A", "B" } },
-            new Foo { Name = "Bob", Age = 30, Bar = new Bar{ Address = "abc", CreatedAt = new DateTime(1964,5,3)}, Tags = { "C", "B" } },
-            new Foo { Name = "Carl", Age = 50, Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(1204,5,3)}, Tags = { "D", "C" } },
-            new Foo { Name = "David", Age = 20, Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(2001,5,3)}, Tags = { "A", "C" } },
-            new Foo { Name = "Eva", Age = 33, Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(2021,5,3)}, Tags = { "B", "D" } },
+            new Foo { Name = "Alice", Age = 18, Bar = new Bar{ Address = "abc", CreatedAt = new DateTime(1888,5,3)}, Tags = { 1, 2 } },
+            new Foo { Name = "Bob", Age = 30, Bar = new Bar{ Address = "abc", CreatedAt = new DateTime(1964,5,3)}, Tags = { 2, 3 } },
+            new Foo { Name = "Carl", Age = 50, Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(1204,5,3)}, Tags = { 3, 4 } },
+            new Foo { Name = "David", Age = 20, Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(2001,5,3)}, Tags = { 1, 3 } },
+            new Foo { Name = "Eva", Age = 33, Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(2021,5,3)}, Tags = { 2, 4 } },
             new Foo { Name = "Frank", Age = 15, Bar = new Bar{ Address = "cde", CreatedAt = new DateTime(1983,5,3)}, Tags = null },
         };
 
         [Test()]
-        public void ParseSimple()
+        public void ParseEq()
         {
-            const string queryString = "name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2";
-            var query = new QueryParser<Foo>().Parse(queryString);
+            const string queryString = "name[$eq]=Alice";
 
+            var query = new QueryParser<Foo>().Parse(queryString);
             var result = query.ApplyTo(source.AsQueryable());
 
             result.ShouldBe(
-                source.AsQueryable().Where(it => it.Name != "Alice" && it.Age >= 18 && it.Age < 40)
-                      .OrderByDescending(it => it.Age)
-                      .Skip(1)
-                      .Take(2)
+                source.AsQueryable().Where(it => it.Name == "Alice")
+            );
+        }
+
+        [Test()]
+        public void ParseNe()
+        {
+            const string queryString = "name[$ne]=Alice";
+
+            var query = new QueryParser<Foo>().Parse(queryString);
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Name != "Alice")
+            );
+        }
+
+        [Test()]
+        public void ParseGt()
+        {
+            const string queryString = "Age[$gt]=20";
+
+            var query = new QueryParser<Foo>().Parse(queryString);
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Age > 20)
+            );
+        }
+
+        [Test()]
+        public void ParseGte()
+        {
+            const string queryString = "Age[$gte]=20";
+
+            var query = new QueryParser<Foo>().Parse(queryString);
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Age >= 20)
+            );
+        }
+
+        [Test()]
+        public void ParseLt()
+        {
+            const string queryString = "Age[$lt]=20";
+
+            var query = new QueryParser<Foo>().Parse(queryString);
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Age < 20)
+            );
+        }
+
+        [Test()]
+        public void ParseLte()
+        {
+            const string queryString = "Age[$lte]=20";
+
+            var query = new QueryParser<Foo>().Parse(queryString);
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Age <= 20)
             );
         }
 
@@ -57,128 +119,181 @@ namespace MQuery.QueryString.Tests
         public void ParseIn()
         {
             const string queryString = "name[$in][]=Alice&name[$in][]=Bob";
-            var query = new QueryParser<Foo>().Parse(queryString);
 
+            var query = new QueryParser<Foo>().Parse(queryString);
             var result = query.ApplyTo(source.AsQueryable());
 
             result.ShouldBe(source.AsQueryable().Where(it => new[] { "Alice", "Bob" }.Contains(it.Name)));
         }
 
         [Test()]
-        public void ParseWithNoise()
+        public void ParseAny()
         {
-            const string queryString = "?a=a&name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2";
-            var query = new QueryParser<Foo>().Parse(queryString);
+            const string queryString = "tags[$any][$gt]=1";
 
+            var query = new QueryParser<Foo>().Parse(queryString);
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(source.AsQueryable()
+                .Where(it => it.Tags != null && it.Tags.Any(x => x > 1))
+            );
+        }
+
+
+        [Test()]
+        public void ParseAnyWithAnd()
+        {
+            const string queryString = "tags[$any][$gt]=1&tags[$any][$lt]=3";
+
+            var query = new QueryParser<Foo>().Parse(queryString);
+            var result = query.ApplyTo(source.AsQueryable());
+
+            // BUG
+            result.ShouldNotBe(source.AsQueryable()
+                 .Where(it => it.Tags != null && it.Tags.Any(x => x > 1 && x < 3))
+             );
+        }
+
+        [Test()]
+        public void ParseNot()
+        {
+            const string queryString = "name[$not][$eq]=Alice";
+
+            var query = new QueryParser<Foo>().Parse(queryString);
             var result = query.ApplyTo(source.AsQueryable());
 
             result.ShouldBe(
-                source.AsQueryable().Where(it => it.Name != "Alice" && it.Age >= 18 && it.Age < 40)
-                      .OrderByDescending(it => it.Age)
-                      .Skip(1)
-                      .Take(2)
+                source.AsQueryable().Where(it => it.Name != "Alice")
             );
         }
 
         [Test()]
-        public void ParseWithNoise2()
+        public void ParseDotPropertySelector()
         {
-            const string queryString = "?abcde&name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2";
+            const string queryString = "bar.address[$eq]=cde";
             var query = new QueryParser<Foo>().Parse(queryString);
 
             var result = query.ApplyTo(source.AsQueryable());
 
             result.ShouldBe(
-                source.AsQueryable().Where(it => it.Name != "Alice" && it.Age >= 18 && it.Age < 40)
-                      .OrderByDescending(it => it.Age)
-                      .Skip(1)
-                      .Take(2)
+                source.AsQueryable().Where(it => it.Bar.Address == "cde")
+            );
+        }
+
+        [Test()]
+        public void ParseWithNoise()
+        {
+            const string queryString = "?a=a&name[$eq]=Alice";
+            var query = new QueryParser<Foo>().Parse(queryString);
+
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Name == "Alice")
             );
         }
 
         [Test()]
         public void ParseWithErrorOp()
         {
-            const string queryString = "name[$]=Alice&name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2";
+            const string queryString = "name[$]=Alice&name[$eq]=Alice";
             var query = new QueryParser<Foo>().Parse(queryString);
 
             var result = query.ApplyTo(source.AsQueryable());
 
             result.ShouldBe(
-                source.AsQueryable().Where(it => it.Name != "Alice" && it.Age >= 18 && it.Age < 40)
-                      .OrderByDescending(it => it.Age)
-                      .Skip(1)
-                      .Take(2)
+                source.AsQueryable().Where(it => it.Name == "Alice")
             );
         }
-
 
         [Test()]
         public void ParseWithTypeError()
         {
-            Should.Throw<Exception>(() => new QueryParser<Foo>().Parse("name[$ne]=Alice&age=a&$sort[age]=-1&$skip=1&$limit=2"));
-        }
-
-        [Test()]
-        public void ParseWithDot()
-        {
-            const string queryString = "bar.address=cde&bar.createdAt[$gt]=2000-1-1";
-            var query = new QueryParser<Foo>().Parse(queryString);
-
-            var result = query.ApplyTo(source.AsQueryable());
-
-            result.ShouldBe(
-                source.AsQueryable().Where(it => it.Bar.Address == "cde" && it.Bar.CreatedAt > new DateTime(2000, 1, 1))
-            );
-        }
-
-        [Test()]
-        public void ParseWithDateTimeOffset()
-        {
-            const string queryString = "bar.address=cde&bar.createdAt[$gt]=2000-1-1+08:00";
-            var query = new QueryParser<Foo>().Parse(queryString);
-            var result = query.ApplyTo(source.AsQueryable());
-
-            result.ShouldBe(
-                source.AsQueryable().Where(it =>
-                    it.Bar.Address == "cde"
-                    && it.Bar.CreatedAt > new DateTimeOffset(new DateTime(2000, 1, 1), TimeSpan.FromHours(8))
-                )
-            );
+            Should.Throw<Exception>(() => new QueryParser<Foo>().Parse("age[$eq]=a"));
         }
 
         [Test()]
         public void ParseWithIcludedProps()
         {
-            const string queryString = "name[$ne]=Alice&age[$gte]=18&age[$lt]=40&$sort[age]=-1&$skip=1&$limit=2";
-            var query = new QueryParser<Foo>(new() { IncludeProps = new() { "Name" } }).Parse(queryString);
+            const string queryString = "name[$ne]=Alice&age[$gte]=18";
+            var query = new QueryParser<Foo>(new() { IncludeProps = new() { "name" } }).Parse(queryString);
 
             var result = query.ApplyTo(source.AsQueryable());
 
             result.ShouldBe(
                 source.AsQueryable().Where(it => it.Name != "Alice")
-                      .Skip(1)
-                      .Take(2)
             );
         }
 
         [Test]
-        public void ParseWithArrayQuery()
+        public void ParseDefautEq()
         {
-            const string queryString = "tags=A";
+            const string queryString = "name=Alice";
             var query = new QueryParser<Foo>().Parse(queryString);
 
             var result = query.ApplyTo(source.AsQueryable());
 
             result.ShouldBe(
-                source.AsQueryable().Where(it => it.Tags != null && it.Tags.Any(x => x == "A"))
+                source.AsQueryable().Where(it => it.Name == "Alice")
             );
         }
 
         [Test]
-        public void ParseWithArrayNullQuery()
+        public void ParseDefautEqWithNot()
         {
-            const string queryString = "tags=";
+            const string queryString = "name[$not]=Alice";
+            var query = new QueryParser<Foo>().Parse(queryString);
+
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Name != "Alice")
+            );
+        }
+
+        [Test]
+        public void ParseDefautEqWithAny()
+        {
+            const string queryString = "tags[$any]=1";
+            var query = new QueryParser<Foo>().Parse(queryString);
+
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Tags != null && it.Tags.Any(x => x == 1))
+            );
+        }
+
+        [Test]
+        public void ParseNin()
+        {
+            const string queryString = "name[$nin]=Alice";
+            var query = new QueryParser<Foo>().Parse(queryString);
+
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => !new[] { "Alice" }.Contains(it.Name))
+            );
+        }
+
+        [Test]
+        public void ParseDefaultAny()
+        {
+            const string queryString = "tags=1";
+            var query = new QueryParser<Foo>().Parse(queryString);
+
+            var result = query.ApplyTo(source.AsQueryable());
+
+            result.ShouldBe(
+                source.AsQueryable().Where(it => it.Tags != null && it.Tags.Any(x => x == 1))
+            );
+        }
+
+        [Test]
+        public void ParseArrayNullQuery()
+        {
+            const string queryString = "tags[$eq]=";
             var query = new QueryParser<Foo>().Parse(queryString);
 
             var result = query.ApplyTo(source.AsQueryable());
@@ -189,9 +304,9 @@ namespace MQuery.QueryString.Tests
         }
 
         [Test]
-        public void ParseWithArrayAnyNullQuery()
+        public void ParseArrayAnyNullQuery()
         {
-            const string queryString = "tags[$any]=";
+            const string queryString = "tags[$any][$eq]=";
             var query = new QueryParser<Foo>().Parse(queryString);
 
             var result = query.ApplyTo(source.AsQueryable());

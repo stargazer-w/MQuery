@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Web;
 
@@ -11,21 +9,6 @@ namespace MQuery.QueryString
 {
     internal class Utils
     {
-        public static LambdaExpression StringToPropSelector<T>(string selectorString)
-        {
-            var singleSelectors = selectorString.Split('.');
-            if(singleSelectors.Length == 0)
-                throw new ArgumentException(nameof(selectorString));
-
-            Expression<Func<T, T>> self = x => x;
-            var body = self.Body;
-            foreach(var propName in singleSelectors)
-            {
-                body = Expression.Property(body, propName);
-            }
-            return Expression.Lambda(body, self.Parameters);
-        }
-
         public static IDictionary<string, string[]> StructureQueryString(string queryString)
         {
             return queryString.Split('&')
