@@ -5,19 +5,18 @@ using System.Linq.Expressions;
 
 namespace MQuery
 {
-    public class PropertySelector
+    public class PropertySelector<T>
     {
         public IEnumerable<string> PropertyNames { get; }
-        public Type LeftType { get; }
         public Type PropertyType { get; }
         /// <summary>
         /// 若属性类型是一个集合类型，则返回集合的元素类型，否则返回null
         /// </summary>
         public Type? PropertyCollectionElementType { get; }
 
-        public PropertySelector(Type type, params string[] propertyNames)
+        public PropertySelector(params string[] propertyNames)
         {
-            PropertyType = LeftType = type;
+            PropertyType = typeof(T);
             for(int i = 0; i < propertyNames.Length; i++)
             {
                 var name = propertyNames[i];
@@ -40,7 +39,7 @@ namespace MQuery
 
         public Expression ToExpression(ParameterExpression left)
         {
-            if(left.Type != LeftType)
+            if(left.Type != typeof(T))
                 throw new ArgumentException("left expression's type must equals LeftType");
 
             Expression selector = left;

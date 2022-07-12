@@ -20,7 +20,7 @@ namespace MQuery.Tests
         [Test]
         public void CombineTest()
         {
-            var selector = new PropertySelector(typeof(Foo), "Bar", "A");
+            var selector = new PropertySelector<Foo>("Bar", "A");
             var param = Expression.Parameter(typeof(Foo));
 
             var selectorExpression = selector.ToExpression(param);
@@ -36,7 +36,7 @@ namespace MQuery.Tests
         public void ShouldThrow()
         {
             Assert.Throws<ArgumentException>(
-                () => new PropertySelector(typeof(Foo), "Bar", "B")
+                () => new PropertySelector<Foo>("Bar", "B")
             );
         }
     }

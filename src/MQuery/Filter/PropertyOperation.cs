@@ -2,13 +2,13 @@
 
 namespace MQuery.Filter
 {
-    public class PropertyOperation : IParameterOperation
+    public class PropertyOperation<T> : IParameterOperation
     {
-        public PropertySelector Selector { get; }
+        public PropertySelector<T> Selector { get; }
 
         public IOperator Operator { get; }
 
-        public PropertyOperation(PropertySelector selector, IOperator @operator)
+        public PropertyOperation(PropertySelector<T> selector, IOperator @operator)
         {
             Selector = selector;
             Operator = @operator;
@@ -19,9 +19,9 @@ namespace MQuery.Filter
             return Operator.Combine(Selector.ToExpression(left));
         }
 
-        public static PropertyOperation Self<T>(IOperator @operator)
+        public static PropertyOperation<T> Self(IOperator @operator)
         {
-            return new PropertyOperation(new PropertySelector(typeof(T)), @operator);
+            return new PropertyOperation<T>(new PropertySelector<T>(), @operator);
         }
     }
 
