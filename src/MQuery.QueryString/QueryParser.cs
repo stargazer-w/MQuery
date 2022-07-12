@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
-using MQuery.Expressions;
 using MQuery.Filter;
 using MQuery.Slice;
 using MQuery.Sort;
@@ -37,7 +38,7 @@ namespace MQuery.QueryString
                 throw new ArgumentNullException(nameof(queryString));
 
             if(queryString.StartsWith("?"))
-                queryString = queryString.Substring(1);
+                queryString = queryString[1..];
 
             var query = new Query<T>();
             var parameters = Utils.StructureQueryString(queryString);
@@ -46,13 +47,13 @@ namespace MQuery.QueryString
             {
                 try
                 {
-                    if(MatchFilter(pair.Key) is { IsMathed: true, Value: FilterKeyData data })
+                    if(MatchFilter(pair.Key) is { IsMathed: true, Value: FilterKeyData filterKeyData })
                     {
-                        SetFilter(query.Document.Filter, data, pair.Value);
+                        SetFilter(query.Document.Filter, filterKeyData, pair.Value);
                     }
-                    else if(MatchSort(pair.Key) is { IsMathed: true, Value.PropSelector: var sortPS })
+                    else if(MatchSort(pair.Key) is { IsMathed: true, Value: SortKeyData sortKeyData })
                     {
-                        SetSort(query.Document.Sort, sortPS, pair.Value.First());
+                        SetSort(query.Document.Sort, sortKeyData, pair.Value.First());
                     }
                     else if(MatchSlice(pair.Key) is { IsMathed: true, Value.SliceSetTo: var setTo })
                     {
@@ -112,12 +113,13 @@ namespace MQuery.QueryString
             return MatchResult.Matched(new SortKeyData(selector));
         }
 
-        public void SetSort(SortDocument<T> sort, string selectorString, string patternString)
+        private void SetSort(SortDocument<T> sort, SortKeyData data, string patternString)
         {
-            if(!IsInvalidProp(selectorString))
+            if(!IsInvalidProp(data.Selector))
                 return;
 
-            var propSelector = Utils.StringToPropSelector<T>(selectorString);
+            if(!TryParsePropertySelector(data.Selector, out var selector))
+                return;
 
             if(!int.TryParse(patternString, out int patternInt))
                 throw new ArgumentException($"$sort value must be integer");
@@ -131,8 +133,7 @@ namespace MQuery.QueryString
                 < 0 => SortPattern.Desc,
                 _ => throw new NotImplementedException(),
             };
-            var sortByPropertyNode = new SortByPropertyNode(propSelector, pattern);
-            sort.AddSortByProperty(sortByPropertyNode);
+            sort.SortBys.Add(new(selector!, pattern));
         }
 
         private MatchResult<FilterKeyData> MatchFilter(string key)
@@ -152,72 +153,120 @@ namespace MQuery.QueryString
             if(!IsInvalidProp(data.Selector))
                 return;
 
-            var props = data.Selector
-                .Split('.')
-                .Select(x => char.ToUpper(x[0]) + x[1..])
-                .ToArray();
-            PropertySelector selector;
-            try
-            {
-                selector = new PropertySelector(typeof(T), props);
-            }
-            catch
-            {
+            if(!TryParsePropertySelector(data.Selector, out var selector))
                 return;
-            }
 
-            filter.And(ParseOperation(selector, data.Ops.ToArray(), valueStrings));
+            var ops = Unsugar(selector, data.Ops.ToArray(), valueStrings);
+            filter.Operation = ParseOperation(filter.Operation, selector, ops, valueStrings);
         }
 
-        private IParameterOperation ParseOperation(PropertySelector selector, string[] ops, IEnumerable<string> values)
+        public string[] Unsugar<U>(PropertySelector<U> selector, string[] ops, IEnumerable<string> values)
         {
-            var eleType = selector.PropertyCollectionElementType;
+            var operators = new[] { "eq", "ne", "gt", "gte", "lt", "lte", "in", };
+            IEnumerable<string> unsugaredOps = ops;
+
+            // nin 是 not in的简称
+            if(unsugaredOps.LastOrDefault() is "nin")
+            {
+                unsugaredOps = unsugaredOps
+                    .Take(unsugaredOps.Count() - 1)
+                    .Append("not")
+                    .Append("in");
+            }
+
+            // eq操作符是默认操作符
+            if(!operators.Contains(unsugaredOps.LastOrDefault()))
+            {
+                unsugaredOps = unsugaredOps.Append("eq");
+            }
+
+            // 对于集合属性，默认对其执行Any
+            // 除非是array eq null 或 array ne null
+            if(
+                selector.PropertyCollectionElementType is not null
+                && !unsugaredOps.Contains("any")
+                && !(unsugaredOps.Last() is "eq" or "ne" && values.First() == "")
+            )
+            {
+                unsugaredOps = unsugaredOps.Prepend("any");
+            }
+
+            return unsugaredOps.ToArray();
+        }
+
+        IParameterOperation ParseOperation<U>(IParameterOperation? operation, PropertySelector<U> selector, string[] ops, IEnumerable<string> values)
+        {
+            var op = new PropertyOperation<U>(selector, ParseOperator(selector, ops, values));
+            switch(operation)
+            {
+                case null:
+                    return op;
+                case And and:
+                    and.Operators.Add(op);
+                    return and;
+                default:
+                    return new And(operation, op);
+            }
+        }
+
+        IOperator ParseOperator<U>(PropertySelector<U> selector, string[] ops, IEnumerable<string> values)
+        {
             return ops switch
             {
-                [] => ParseOperation(selector, new[] { "eq" }, values),
-                // 默认对集合类型的属性所有操作都改为对其任意元素，
-                // 如array=x => array[$any]=x
-                // 除非是array[$eq]=<null> 或者 array[$ne]=<null>
-                _ when eleType is not null && !ops.Contains("any") && !(ops is ["eq"] or ["ne"] && values.First() is "")
-                    => ParseOperation(selector, ops.Prepend("any").ToArray(), values),
-                ["not", .. var other] => new Not(ParseOperation(selector, other, values)),
-                ["any", .. var other] => eleType switch
+                [var @operator] => parseOperator(@operator),
+                ["not", .. var others] => new Not(ParseOperator(selector, others, values)),
+                ["any", .. var eleOps] => selector.PropertyCollectionElementType switch
                 {
-                    not null => new PropertyOperation(selector, new Any(ParseOperation(new PropertySelector(eleType), other, values))),
-                    _ => throw new InvalidOperationException("The in operator must operate on an Array"),
+                    Type eleType => ParseAny(eleType, eleOps, values),
+                    _ => throw new NotSupportedException(),
                 },
-                ["nin"] => ParseOperation(selector, new[] { "not", "in" }, values),
-                [var @operator] => new PropertyOperation(selector, parseOperator(@operator)),
                 _ => throw new NotSupportedException()
             };
 
-            IOperator parseOperator(string @operator)
-            {
-                return @operator switch
-                {
-                    "eq" => createOperator(typeof(Equal<>), parseValue()),
-                    "ne" => createOperator(typeof(NotEqual<>), parseValue()),
-                    "gt" => createOperator(typeof(GreaterThen<>), parseValue()),
-                    "gte" => createOperator(typeof(GreaterThenOrEqual<>), parseValue()),
-                    "lt" => createOperator(typeof(LessThen<>), parseValue()),
-                    "lte" => createOperator(typeof(LessThenOrEqual<>), parseValue()),
-                    "in" => createOperator(typeof(In<>), parseValues()),
-                    _ => throw new NotSupportedException()
-                };
+            IOperator parseOperator(string @operator) => ParseSimpleOperator(@operator, selector.PropertyType, values);
+        }
 
-                IOperator createOperator(Type opType, object? value) => (IOperator)Activator.CreateInstance(opType.MakeGenericType(selector.PropertyType), value);
-                object? parseValue() => ParseValue(selector.PropertyType, values.First());
-                object? parseValues() => ParseValues(selector.PropertyType, values);
+        Any ParseAny(Type eleType, string[] eleOps, IEnumerable<string> values)
+        {
+            var func = parseOperation<object>;
+            var op = (IParameterOperation)func.Method
+                .GetGenericMethodDefinition()
+                .MakeGenericMethod(eleType)
+                .Invoke(func.Target, Array.Empty<object>())!;
+            return new Any(op);
+
+            IParameterOperation parseOperation<U>()
+            {
+                return ParseOperation<U>(null, new(), eleOps, values);
             }
         }
 
-        private object ParseValues(Type type, IEnumerable<string> valueStrings)
+        IOperator ParseSimpleOperator(string @operator, Type type, IEnumerable<string> values)
         {
-            var values = valueStrings.Select(it => ParseValue(type, it));
-            return typeof(Enumerable).GetMethod("Cast")!.MakeGenericMethod(type).Invoke(null, new[] { values })!;
+            return @operator switch
+            {
+                "eq" => createOperator(typeof(Equal<>), parseValue()),
+                "ne" => createOperator(typeof(NotEqual<>), parseValue()),
+                "gt" => createOperator(typeof(GreaterThen<>), parseValue()),
+                "gte" => createOperator(typeof(GreaterThenOrEqual<>), parseValue()),
+                "lt" => createOperator(typeof(LessThen<>), parseValue()),
+                "lte" => createOperator(typeof(LessThenOrEqual<>), parseValue()),
+                "in" => createOperator(typeof(In<>), parseValues()),
+                _ => throw new NotSupportedException()
+            };
+
+            object? parseValue() => ParseValue(type, values.First());
+            object? parseValues() => ParseValues(type, values);
+            IOperator createOperator(Type opType, object? value) => (IOperator)Activator.CreateInstance(opType.MakeGenericType(type), value)!;
         }
 
-        private object? ParseValue(Type type, string valueString)
+        IEnumerable ParseValues(Type type, IEnumerable<string> valueStrings)
+        {
+            var values = valueStrings.Select(it => ParseValue(type, it));
+            return (IEnumerable)typeof(Enumerable).GetMethod("Cast")!.MakeGenericMethod(type).Invoke(null, new[] { values })!;
+        }
+
+        object? ParseValue(Type type, string valueString)
         {
             string? str = valueString;
             if(str.Length == 0)
@@ -235,6 +284,25 @@ namespace MQuery.QueryString
             {
                 throw new ArgumentException($"Can not parse {str ?? "<Empty>"} to type {type.Name}", e);
             }
+        }
+
+        private bool TryParsePropertySelector(string stringSelector, [NotNullWhen(true)] out PropertySelector<T>? selector)
+        {
+            var props = stringSelector
+                .Split('.')
+                .Select(x => char.ToUpper(x[0]) + x[1..])
+                .ToArray();
+            try
+            {
+                selector = new PropertySelector<T>(props);
+            }
+            catch
+            {
+                selector = null;
+                return false;
+            }
+
+            return true;
         }
 
         private bool IsInvalidProp(string selector)

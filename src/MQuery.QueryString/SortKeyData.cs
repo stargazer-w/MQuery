@@ -4,9 +4,9 @@
     {
         public SortKeyData(string propSelector)
         {
-            PropSelector = propSelector;
+            Selector = propSelector;
         }
 
-        public string PropSelector { get; }
+        public string Selector { get; }
     }
 }
