@@ -24,9 +24,4 @@ namespace MQuery.Filter
             return new PropertyOperation<T>(new PropertySelector<T>(), @operator);
         }
     }
-
-    public interface IParameterOperation
-    {
-        Expression Combine(ParameterExpression left);
-    }
 }
