@@ -2,16 +2,16 @@
 
 namespace MQuery.Filter
 {
-    public class Not : IParameterOperation
+    public class Not : IOperator
     {
-        public IParameterOperation Operator { get; }
+        public IOperator Operator { get; }
 
-        public Not(IParameterOperation @operator)
+        public Not(IOperator @operator)
         {
             Operator = @operator;
         }
 
-        public Expression Combine(ParameterExpression left)
+        public Expression Combine(Expression left)
         {
             return Expression.Not(Operator.Combine(left));
         }

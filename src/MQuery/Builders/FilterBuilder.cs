@@ -11,7 +11,7 @@ namespace MQuery.Builders
 
         public ConditionBuilder<T> Prop(params string[] props)
         {
-            var _propSelector = new PropertySelector(typeof(T), props);
+            var _propSelector = new PropertySelector<T>(props);
             return new ConditionBuilder<T>(_propSelector, this);
         }
 
@@ -26,42 +26,43 @@ namespace MQuery.Builders
     public class ConditionBuilder<T>
     {
         private readonly FilterBuilder<T> _filterBuilder;
-        private readonly PropertySelector _propSelector;
-        private Func<IOperator, IParameterOperation> _createQueryProperty;
+        private readonly PropertySelector<T> _propSelector;
+        private Func<IOperator, IOperator> _opBuilder = x => x;
+        private readonly Func<IOperator, IParameterOperation> _createQueryProperty;
         private IOperator? _op;
 
-        public ConditionBuilder(PropertySelector propSelector, FilterBuilder<T> filterBuilder)
+        public ConditionBuilder(PropertySelector<T> propSelector, FilterBuilder<T> filterBuilder)
         {
             _propSelector = propSelector;
             _filterBuilder = filterBuilder;
-            _createQueryProperty = op => new PropertyOperation(_propSelector, op);
+            _createQueryProperty = op => new PropertyOperation<T>(_propSelector, op);
         }
 
         public FilterBuilder<T> Eq<U>(U value)
         {
-            _op = new Equal<U>(value);
+            _op = _opBuilder(new Equal<U>(value));
             _filterBuilder._conditionBuilder = this;
             return _filterBuilder;
         }
 
         public FilterBuilder<T> Gt<U>(U? value)
         {
-            _op = new GreaterThen<U>(value);
+            _op = _opBuilder(new GreaterThen<U>(value));
             _filterBuilder._conditionBuilder = this;
             return _filterBuilder;
         }
 
         public FilterBuilder<T> In<U>(IEnumerable<U?> value)
         {
-            _op = new In<U>(value);
+            _op = _opBuilder(new In<U>(value));
             _filterBuilder._conditionBuilder = this;
             return _filterBuilder;
         }
 
         public ConditionBuilder<T> Not()
         {
-            var old = _createQueryProperty;
-            _createQueryProperty = op => new Not(old(op));
+            var old = _opBuilder;
+            _opBuilder = x => new Not(old(x));
             return this;
         }
 
