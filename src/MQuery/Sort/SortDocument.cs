@@ -8,7 +8,7 @@ namespace MQuery.Sort
     public class SortDocument<T>
     {
 
-        public List<SortBy> SortBys { get; } = new();
+        public List<SortBy<T>> SortBys { get; } = new();
 
         public IQueryable<T> ApplyTo(IQueryable<T> source)
         {
