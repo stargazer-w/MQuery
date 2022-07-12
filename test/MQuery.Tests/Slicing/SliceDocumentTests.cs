@@ -1,20 +1,29 @@
-﻿using MQuery.Slice;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Shouldly;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace MQuery.Expressions.Tests
+namespace MQuery.Slice.Tests
 {
     [TestFixture()]
-    public class SliceExpressionExtessionsTests
+    public class SliceDocumentTests
     {
         public class Foo
         {
             public string Name { get; set; }
 
             public int Age { get; set; }
+
+            public double? Salary { get; set; }
+
+            public Foo Other { get; set; }
         }
+
+        public static List<Foo> source = new()
+        {
+            new Foo { Name = "Alice", Age = 18, Salary = null, Other = new Foo { Name = "Bob",  Age = 30 } },
+            new Foo { Name = "Bob",   Age = 20, Salary = 1000, Other = new Foo { Name = "Carl", Age = 50 } },
+        };
 
         [Test()]
         public void ToExpressionTest()
