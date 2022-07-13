@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace MQuery
@@ -23,8 +22,7 @@ namespace MQuery
                 var p = PropertyType.GetProperty(name);
                 if(p is null)
                 {
-                    var nameChain = string.Join(".", propertyNames.Take(i + 1));
-                    throw new ArgumentException($"can not found property {nameChain} of object");
+                    throw new ArgumentException($"can not found property {name} of {(i > 0 ? propertyNames[i - 1] : "$")}");
                 }
                 PropertyType = p.PropertyType;
             }
@@ -40,7 +38,7 @@ namespace MQuery
         public Expression ToExpression(ParameterExpression left)
         {
             if(left.Type != typeof(T))
-                throw new ArgumentException("left expression's type must equals LeftType");
+                throw new ArgumentException("left expression's type must be equal to LeftType");
 
             Expression selector = left;
             foreach(var prop in PropertyNames)
