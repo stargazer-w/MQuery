@@ -29,7 +29,7 @@ namespace MQuery.Filter.Tests
         {
             var propOp = PropertyOperation<object>.Self(new ConstantOperator(condition));
             var op = new All(propOp);
-            var body = op.Combine(Expression.Constant(new object[] { null }));
+            var body = op.Combine(Expression.Constant(new object?[] { null }));
             var func = Expression.Lambda<Func<bool>>(body).Compile();
 
             Assert.That(func(), Is.EqualTo(result));

@@ -10,13 +10,13 @@ namespace MQuery.Slice.Tests
     {
         public class Foo
         {
-            public string Name { get; set; }
+            public string? Name { get; set; }
 
             public int Age { get; set; }
 
             public double? Salary { get; set; }
 
-            public Foo Other { get; set; }
+            public Foo? Other { get; set; }
         }
 
         public static List<Foo> source = new()

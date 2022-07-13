@@ -36,11 +36,8 @@ namespace MQuery
                 return _parameter;
             }
         }
-    }
 
-    public static class PropertyLambda
-    {
-        public static PropertyLambda<T> Create<T, U>(Expression<Func<T, U>> selector)
+        public static PropertyLambda<T> Create<U>(Expression<Func<T, U>> selector)
         {
             return new PropertyLambda<T>(selector);
         }

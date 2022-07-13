@@ -10,13 +10,13 @@ namespace MQuery.Sort.Tests
     {
         public class Foo
         {
-            public string Name { get; set; }
+            public string? Name { get; set; }
 
             public int Age { get; set; }
 
             public double? Salary { get; set; }
 
-            public Foo Other { get; set; }
+            public Foo? Other { get; set; }
         }
 
         public static List<Foo> source = new()
@@ -29,7 +29,7 @@ namespace MQuery.Sort.Tests
         public void ToExpressionTest()
         {
             var sort = new SortDocument<Foo>();
-            sort.SortBys.Add(new(new("Age"), SortPattern.Desc));
+            sort.SortBys.Add(new(PropertyLambda<Foo>.Create(x => x.Age), SortPattern.Desc));
 
             var expr = sort.ToExpression();
             var result = expr.Compile()(source.AsQueryable());
