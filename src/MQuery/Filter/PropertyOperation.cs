@@ -4,11 +4,11 @@ namespace MQuery.Filter
 {
     public class PropertyOperation<T> : IParameterOperation
     {
-        public PropertySelector<T> Selector { get; }
+        public IPropertySelector<T> Selector { get; }
 
         public IOperator Operator { get; }
 
-        public PropertyOperation(PropertySelector<T> selector, IOperator @operator)
+        public PropertyOperation(IPropertySelector<T> selector, IOperator @operator)
         {
             Selector = selector;
             Operator = @operator;

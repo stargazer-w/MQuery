@@ -4,13 +4,10 @@ using System.Linq.Expressions;
 
 namespace MQuery
 {
-    public class PropertySelector<T>
+    public class PropertySelector<T> : IPropertySelector<T>
     {
         public IEnumerable<string> PropertyNames { get; }
         public Type PropertyType { get; }
-        /// <summary>
-        /// 若属性类型是一个集合类型，则返回集合的元素类型，否则返回null
-        /// </summary>
         public Type? PropertyCollectionElementType { get; }
 
         public PropertySelector(params string[] propertyNames)
