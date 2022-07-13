@@ -10,11 +10,11 @@ namespace MQuery.Sort
         private static readonly MethodInfo _orderByInfo = typeof(Queryable).GetMethods().First(m => m.ToString() == "System.Linq.IOrderedQueryable`1[TSource] OrderBy[TSource,TKey](System.Linq.IQueryable`1[TSource], System.Linq.Expressions.Expression`1[System.Func`2[TSource,TKey]])");
         private static readonly MethodInfo _orderByDescInfo = typeof(Queryable).GetMethods().First(m => m.ToString() == "System.Linq.IOrderedQueryable`1[TSource] OrderByDescending[TSource,TKey](System.Linq.IQueryable`1[TSource], System.Linq.Expressions.Expression`1[System.Func`2[TSource,TKey]])");
 
-        public PropertySelector<T> Selector { get; }
+        public IPropertySelector<T> Selector { get; }
 
         public SortPattern Pattern { get; }
 
-        public SortBy(PropertySelector<T> selector, SortPattern pattern)
+        public SortBy(IPropertySelector<T> selector, SortPattern pattern)
         {
             Selector = selector ?? throw new ArgumentNullException(nameof(selector));
             Pattern = pattern;
