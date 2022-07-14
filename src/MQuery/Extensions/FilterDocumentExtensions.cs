@@ -9,6 +9,17 @@ namespace MQuery.Extensions
         public static FilterDocument<T> And<T, U>(this FilterDocument<T> filter, Expression<Func<T, U>> selector, IOperator @operator)
         {
             var operation = new PropertyOperation<T>(new PropertyLambda<T>(selector), @operator);
+            return filter.And(operation);
+        }
+
+        public static FilterDocument<T> And<T>(this FilterDocument<T> filter, Expression<Func<T, bool>> expression)
+        {
+            var operation = new LambdaOperation<T>(expression);
+            return filter.And(operation);
+        }
+
+        public static FilterDocument<T> And<T>(this FilterDocument<T> filter, IParameterOperation operation)
+        {
             if(filter.Operation is And and)
             {
                 and.Operators.Add(operation);
