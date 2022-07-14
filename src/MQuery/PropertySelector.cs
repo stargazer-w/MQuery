@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using MQuery.Utils;
 
 namespace MQuery
 {
@@ -24,7 +25,7 @@ namespace MQuery
                 PropertyType = p.PropertyType;
             }
 
-            if(IsCollection(PropertyType, out var eleType))
+            if(TypeHelper.IsCollection(PropertyType, out var eleType))
             {
                 PropertyCollectionElementType = eleType;
             }
@@ -45,18 +46,5 @@ namespace MQuery
             return selector;
         }
 
-        static bool IsCollection(Type type, out Type? elementType)
-        {
-            if(type.GetInterface("ICollection`1")?.GetGenericArguments()[0] is Type eleType)
-            {
-                elementType = eleType;
-                return true;
-            }
-            else
-            {
-                elementType = null;
-                return false;
-            }
-        }
     }
 }

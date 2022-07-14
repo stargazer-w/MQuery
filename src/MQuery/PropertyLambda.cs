@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using MQuery.Utils;
 
 namespace MQuery
 {
@@ -13,28 +14,17 @@ namespace MQuery
         internal PropertyLambda(LambdaExpression lambda)
         {
             _lambda = lambda;
+
+            if(TypeHelper.IsCollection(PropertyType, out var eleType))
+            {
+                PropertyCollectionElementType = eleType;
+            }
         }
 
         public Expression ToExpression(ParameterExpression left)
         {
             var rebinder = new ParameterRebindVisitor(left);
             return rebinder.Visit(_lambda.Body);
-        }
-
-
-        class ParameterRebindVisitor : ExpressionVisitor
-        {
-            private readonly ParameterExpression _parameter;
-
-            public ParameterRebindVisitor(ParameterExpression parameter)
-            {
-                _parameter = parameter;
-            }
-
-            protected override Expression VisitParameter(ParameterExpression node)
-            {
-                return _parameter;
-            }
         }
 
         public static PropertyLambda<T> Create<U>(Expression<Func<T, U>> selector)
