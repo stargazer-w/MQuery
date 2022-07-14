@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+﻿using System;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using MQuery.QueryString;
 
 namespace MQuery.AspNetCore
@@ -14,14 +15,21 @@ namespace MQuery.AspNetCore
 
         public IModelBinder? GetBinder(ModelBinderProviderContext context)
         {
-            if(context.Metadata.ModelType.IsGenericType)
-            {
-                var defType = context.Metadata.ModelType.GetGenericTypeDefinition();
-                if(defType == typeof(Query<>) || defType == typeof(IQuery<>))
-                    return new QueryBinder(_options);
-            }
+            if(!IsDefineOfQuery(context.Metadata.ModelType))
+                return null;
 
-            return null;
+            var modelType = context.Metadata.ModelType.GetGenericArguments()[0];
+            var binderType = typeof(QueryBinder<>).MakeGenericType(modelType);
+            return Activator.CreateInstance(binderType, _options) as IModelBinder;
+        }
+
+        public bool IsDefineOfQuery(Type type)
+        {
+            return type.IsGenericType
+                && (
+                    type.GetGenericTypeDefinition() == typeof(Query<>)
+                    || type.GetGenericTypeDefinition() == typeof(IQuery<>)
+                );
         }
     }
 }
