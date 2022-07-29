@@ -4,10 +4,28 @@
 		<TargetFrameworks>netcoreapp3.1</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
+		<Title>$(AssemblyName)</Title>
+		<Version>0.1.0</Version>
+		<Authors>stargazer-w</Authors>
+		<RepositoryUrl>https://github.com/stargazer-w/MQuery</RepositoryUrl>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="..\..\LICENSE">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\..\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 	<ItemGroup>
