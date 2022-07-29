@@ -4,6 +4,13 @@
 		<TargetFrameworks>netstandard2.0;netcoreapp3.1</TargetFrameworks>
 		<LangVersion>preview</LangVersion>
 		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>$(AssemblyName)</Title>
+		<Version>0.1.0</Version>
+		<Authors>stargazer-w</Authors>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/stargazer-w/MQuery</RepositoryUrl>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -13,6 +20,21 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Hafner.Compatibility.NullableReferenceTypeAttributes" Version="1.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="..\..\LICENSE">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\..\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MQuery " Version="0.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>
