@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MQuery.NSwag\MQuery.NSwag.csproj" />
+    <ProjectReference Include="..\..\src\MQuery.NSwag\MQuery.NSwag.csproj" />
     <ProjectReference Include="..\..\src\MQuery.AspNetCore\MQuery.AspNetCore.csproj" />
   </ItemGroup>
 

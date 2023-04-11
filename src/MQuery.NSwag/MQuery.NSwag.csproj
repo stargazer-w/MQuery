@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\MQuery\MQuery.csproj" />
+    <ProjectReference Include="..\..\src\MQuery\MQuery.csproj" />
   </ItemGroup>
 
 </Project>

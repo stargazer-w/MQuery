@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{DB752F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MQuery.AspNetCore.Sample", "sample\MQuery.AspNetCore.Sample\MQuery.AspNetCore.Sample.csproj", "{E9595911-6D8C-42E6-A015-08C61183EDB7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MQuery.NSwag", "MQuery.NSwag\MQuery.NSwag.csproj", "{2E80320F-0767-403B-BD20-B2287786CEBC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MQuery.NSwag", "src\MQuery.NSwag\MQuery.NSwag.csproj", "{2008D355-56FA-4119-AAB0-B0AA417DB802}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,10 +51,10 @@ Global
 		{E9595911-6D8C-42E6-A015-08C61183EDB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E9595911-6D8C-42E6-A015-08C61183EDB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E9595911-6D8C-42E6-A015-08C61183EDB7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2E80320F-0767-403B-BD20-B2287786CEBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2E80320F-0767-403B-BD20-B2287786CEBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2E80320F-0767-403B-BD20-B2287786CEBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2E80320F-0767-403B-BD20-B2287786CEBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2008D355-56FA-4119-AAB0-B0AA417DB802}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2008D355-56FA-4119-AAB0-B0AA417DB802}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2008D355-56FA-4119-AAB0-B0AA417DB802}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2008D355-56FA-4119-AAB0-B0AA417DB802}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
