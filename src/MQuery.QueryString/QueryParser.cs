@@ -38,7 +38,7 @@ namespace MQuery.QueryString
                 throw new ArgumentNullException(nameof(queryString));
 
             if(queryString.StartsWith("?"))
-                queryString = queryString[1..];
+                queryString = queryString.Substring(1);
 
             var query = new Query<T>();
             var parameters = Utils.StructureQueryString(queryString);
@@ -211,19 +211,31 @@ namespace MQuery.QueryString
 
         IOperator ParseOperator<U>(PropertySelector<U> selector, string[] ops, IEnumerable<string> values)
         {
-            return ops switch
+            if(ops == null || ops.Length == 0)
             {
-                [var @operator] => parseOperator(@operator),
-                ["not", .. var others] => new Not(ParseOperator(selector, others, values)),
-                ["any", .. var eleOps] => selector.PropertyCollectionElementType switch
-                {
-                    Type eleType => ParseAny(eleType, eleOps, values),
-                    _ => throw new NotSupportedException(),
-                },
-                _ => throw new NotSupportedException()
-            };
+                throw new NotSupportedException();
+            }
 
-            IOperator parseOperator(string @operator) => ParseSimpleOperator(@operator, selector.PropertyType, values);
+            if(ops.Length == 1)
+            {
+                return ParseSimpleOperator(ops[0], selector.PropertyType, values);
+            }
+
+            if(ops[0] == "not")
+            {
+                return new Not(ParseOperator(selector, ops.Skip(1).ToArray(), values));
+            }
+
+            if(ops[0] == "any")
+            {
+                return selector.PropertyCollectionElementType switch
+                {
+                    Type eleType => ParseAny(eleType, ops.Skip(1).ToArray(), values),
+                    _ => throw new NotSupportedException(),
+                };
+            }
+
+            throw new NotSupportedException();
         }
 
         Any ParseAny(Type eleType, string[] eleOps, IEnumerable<string> values)
@@ -286,11 +298,11 @@ namespace MQuery.QueryString
             }
         }
 
-        private bool TryParsePropertySelector(string stringSelector, [NotNullWhen(true)] out PropertySelector<T>? selector)
+        private bool TryParsePropertySelector(string stringSelector, out PropertySelector<T>? selector)
         {
             var props = stringSelector
                 .Split('.')
-                .Select(x => char.ToUpper(x[0]) + x[1..])
+                .Select(x => char.ToUpper(x[0]) + x.Substring(1))
                 .ToArray();
             try
             {
