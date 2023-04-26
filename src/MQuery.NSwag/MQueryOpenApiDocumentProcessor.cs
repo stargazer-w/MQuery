@@ -16,7 +16,7 @@ namespace MQuery.NSwag
         {
             Type = JsonObjectType.Integer,
             Format = JsonFormatStrings.Integer,
-            Description = "根据key值所指定的属性排序。value值为正时正序，为负时倒序，0则忽略。",
+            Description = "Specify in the sort parameter the field or fields to sort by and a value of 1 or -1 to specify an ascending or descending sort respectively.",
         };
 
         static readonly OpenApiParameter _skipParam = new()
@@ -29,7 +29,7 @@ namespace MQuery.NSwag
                 Type = JsonObjectType.Integer,
                 Format = JsonFormatStrings.Integer,
             },
-            Description = "跳过几项",
+            Description = "Skips over the specified number of items",
         };
 
         static readonly OpenApiParameter _limitParam = new()
@@ -42,7 +42,7 @@ namespace MQuery.NSwag
                 Type = JsonObjectType.Integer,
                 Format = JsonFormatStrings.Integer,
             },
-            Description = "获取几项",
+            Description = "Limits the number of items",
         };
 
         bool IOperationProcessor.Process(OperationProcessorContext context)
@@ -92,6 +92,7 @@ namespace MQuery.NSwag
                     Kind = OpenApiParameterKind.Query,
                     Style = OpenApiParameterStyle.DeepObject,
                     Schema = sortingSchema,
+                    Description = "Specifies the order in which the query returns.",
                 });
 
                 parameters.Add(_skipParam);
@@ -116,22 +117,63 @@ namespace MQuery.NSwag
 
             static JsonSchema generateCompareSchema(JsonSchema schema)
             {
-                var prop = new JsonSchemaProperty
+                var shortEqualsSchema = new JsonSchemaProperty
                 {
                     Reference = schema,
+                    Description = "Matches values that are equal to a specified value.",
                 };
-                var arrayProp = new JsonSchemaProperty { Type = JsonObjectType.Array, Item = prop };
 
-                var equalsSchema = new JsonSchema() { Properties = { ["$eq"] = prop } };
+                var equalsSchema = new JsonSchema()
+                {
+                    Properties =
+                    {
+                        ["$eq"] = new JsonSchemaProperty
+                        {
+                            Reference = schema,
+                            Description = "Matches values that are equal to a specified value. Equivalent to using the field=<value>",
+                        },
+                    },
+                };
 
-                var inSchema = new JsonSchema() { Properties = { ["$in"] = arrayProp } };
+                var inSchema = new JsonSchema()
+                {
+                    Properties =
+                    {
+                        ["$in"] = new JsonSchemaProperty
+                        {
+                            Type = JsonObjectType.Array,
+                            Item = new JsonSchemaProperty { Reference = schema },
+                            Description = "Matches any of the values specified in an array.",
+                        }
+                    }
+                };
 
                 var lessThenSchema = new JsonSchema()
                 {
                     OneOf =
                     {
-                        new() { Properties = { ["$lt"] = prop } },
-                        new() { Properties = { ["$lte"] = prop } },
+                        new()
+                        {
+                            Properties =
+                            {
+                                ["$lt"] =  new JsonSchemaProperty
+                                {
+                                    Reference = schema,
+                                    Description = "Matches values that are less than a specified value.",
+                                },
+                            }
+                        },
+                        new()
+                        {
+                            Properties =
+                            {
+                                ["$lte"] = new JsonSchemaProperty
+                                {
+                                    Reference = schema,
+                                    Description = "Matches values that are less than or equal to a specified value.",
+                                },
+                            }
+                        },
                     }
                 };
 
@@ -139,8 +181,28 @@ namespace MQuery.NSwag
                 {
                     OneOf =
                     {
-                        new() { Properties = { ["$gt"] = prop } },
-                        new() { Properties = { ["$gte"] = prop } },
+                        new()
+                        {
+                            Properties =
+                            {
+                                ["$gt"] = new JsonSchemaProperty
+                                {
+                                    Reference = schema,
+                                    Description = "Matches values that are greater than a specified value.",
+                                },
+                            }
+                        },
+                        new()
+                        {
+                            Properties =
+                            {
+                                ["$gte"] = new JsonSchemaProperty
+                                {
+                                    Reference = schema,
+                                    Description = "Matches values that are greater than or equal to a specified value."
+                                }
+                            }
+                        },
                     }
                 };
 
@@ -148,8 +210,29 @@ namespace MQuery.NSwag
                 {
                     OneOf =
                     {
-                        new() { Properties = { ["$ne"] = prop } },
-                        new() { Properties = { ["$nin"] = arrayProp } },
+                        new()
+                        {
+                            Properties =
+                            {
+                                ["$ne"] = new JsonSchemaProperty
+                                {
+                                    Reference = schema,
+                                    Description = "Matches all values that are not equal to a specified value."
+                                }
+                            }
+                        },
+                        new()
+                        {
+                            Properties =
+                            {
+                                ["$nin"] = new JsonSchemaProperty
+                                {
+                                    Type = JsonObjectType.Array,
+                                    Item = new JsonSchemaProperty { Reference = schema },
+                                    Description = "Matches none of the values specified in an array."
+                                }
+                            }
+                        },
                     }
                 };
 
@@ -157,7 +240,7 @@ namespace MQuery.NSwag
                 {
                     OneOf =
                     {
-                        prop,
+                        shortEqualsSchema,
                         equalsSchema,
                         inSchema,
                         new ()
