@@ -9,28 +9,17 @@
 		<Authors>stargazer-w</Authors>
 		<RepositoryUrl>https://github.com/stargazer-w/MQuery</RepositoryUrl>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<None Include="..\..\LICENSE" Pack="True" PackagePath="/" />
+		<None Include="..\..\README.md" Pack="True" PackagePath="/" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="MQuery.QueryString" Version="0.1.0" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include="..\..\LICENSE">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
-	  <None Include="..\..\README.md">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\MQuery.QueryString\MQuery.QueryString.csproj" />
-	</ItemGroup>
-
 
 </Project>

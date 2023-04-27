@@ -7,10 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="NSwag.AspNetCore" Version="13.16.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\MQuery\MQuery.csproj" />
-  </ItemGroup>
+		<PackageReference Include="MQuery " Version="0.1.0" />
+	</ItemGroup>
 
 </Project>
