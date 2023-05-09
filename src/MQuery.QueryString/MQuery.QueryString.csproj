@@ -5,7 +5,6 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<Title>$(AssemblyName)</Title>
-		<Version>0.1.0</Version>
 		<Authors>stargazer-w</Authors>
 		<RepositoryUrl>https://github.com/stargazer-w/MQuery</RepositoryUrl>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -18,7 +17,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MQuery " Version="0.1.0" />
+		<PackageReference Include="MQuery " Version="[0.1.0, 2.0)" />
 	</ItemGroup>
 
 </Project>
