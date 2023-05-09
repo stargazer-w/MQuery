@@ -51,7 +51,7 @@ namespace MQuery.Extensions
             }
             else
             {
-                filter.Operation = new And(filter.Operation, operation);
+                filter.Operation = new Or(filter.Operation, operation);
             }
             return filter;
         }
