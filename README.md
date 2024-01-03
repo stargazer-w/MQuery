@@ -2,32 +2,32 @@
 
 ## 使用 MQuery 你能得到什么？
 
-使用 MQuery 只需要个位数的代码量，就能构建 ASP.NET Core WebApi 上的任意字段的简单查询，例如
+使用 MQuery 只需要个位数的代码行数，就能构建 ASP.NET Core WebApi 上的任意字段的简单查询接口，例如
 
 原始数据
 
 ```JSON
 [
-    { "id": 1, "username": "Alice", "age": 18, "country": "USA" },
-    { "id": 2, "username": "Bob", "age": 20, "country": "UK" },
-    { "id": 3, "username": "Carl", "age": 47, "country": "Canada" },
-    { "id": 4, "username": "Daniel", "age": 50, "country": "USA" },
-    { "id": 5, "username": "Eva", "age": 35, "country": "Poland" },
-    { "id": 6, "username": "Fiona", "age": null, "country": "Russia" },
+  { "id": 1, "item": "journal", "qty": 25, "dim_cm":  [14, 21] },
+  { "id": 2, "item": "notebook", "qty": 50, "dim_cm": [14, 21] },
+  { "id": 3, "item": "paper", "qty": 100, "dim_cm": null },
+  { "id": 4, "item": "planner", "qty": 75, "dim_cm": [22.85, 30] },
+  { "id": 5, "item": "postcard", "qty": 45, "dim_cm": [10, 15.25] },
+  { "id": 6, "item": "postcard", "qty": null, "dim_cm": [10, 15.25] },
 ]
 ```
 
-查询 username 为“Alice”的数据
+查询`item`为`"journal"`的数据
 
 ```
-{your-api-path}?username=Alice
+?item=journal
 ```
 
 结果
 
 ```JSON
 [
-    { "id": 1, "username": "Alice", "age": 18, "country": "USA" },
+  { "id": 1, "item": "journal", "qty": 25, "dim_cm":  [14, 21] },
 ]
 ```
 
@@ -35,7 +35,19 @@
 
 ## 如何使用
 
-### 在 ASP.NET Core WebApi 中使用MQuery
+### 安装
+
+目前该包为自用，不能保证质量，所以未在nuget中公开。但可以直接使用命令行安装。
+
+在ASP.NET Core中
+
+`dotnet add package MQuery.AspNetCore`
+
+在其他环境直接解析querystring字符串
+
+`dotnet add package MQuery.QueryString`
+
+### 在 ASP.NET Core WebApi 中使用
 
 Startup.cs
 
@@ -64,7 +76,7 @@ public ActionResult<IEnumerable<Blog>> Query(Query<Blog> query)
 }
 ```
 
-你也可以单独进行筛选、排序以及分页
+如此便完成了数据的筛选、排序、分页接口。你也可以单独进行其中一种操作：
 
 单独进行筛选
 
